@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import mockApi from '@/lib/mock-api';
+import { realApi } from '@/lib/api';
 import { Category, Product } from '@/lib/api';
 
 export default function DashboardHome() {
@@ -11,12 +11,12 @@ export default function DashboardHome() {
 
   useEffect(() => {
     Promise.all([
-      mockApi.getCategories(),
-      mockApi.getProducts(),
+      realApi.getCategories(),
+      realApi.getProducts(),
     ])
       .then(([cats, prods]) => {
         setCategories(cats);
-        setProducts(prods);
+        setProducts(prods.data || prods); // Handle paginated response
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -118,12 +118,12 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-        <p className="text-sm text-blue-700 flex items-center gap-2">
+      <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-lg">
+        <p className="text-sm text-green-700 flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Demo Mode - Data resets on page refresh
+          Connected to live Inventory POS API
         </p>
       </div>
     </div>

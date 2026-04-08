@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { api, User } from '@/lib/api';
+import { realApi } from '@/lib/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +19,7 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await api.post<{ token: string; user: User }>('/auth/signup', { email, password, role });
+      const res = await realApi.signup({ email, password, role });
       setAuth(res.token, res.user);
       router.push('/dashboard');
     } catch (err) {

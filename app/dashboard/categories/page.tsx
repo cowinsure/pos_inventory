@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import mockApi from '@/lib/mock-api';
+import { realApi } from '@/lib/api';
 import { Category } from '@/lib/api';
 
 interface CategoryFormData {
@@ -27,7 +27,7 @@ export default function CategoriesPage() {
   const [attrData, setAttrData] = useState<AttrFormData>({ name: '', type: 'select', options: '', required: true });
 
   const loadCategories = useCallback(() => {
-    mockApi.getCategories()
+    realApi.getCategories()
       .then(setCategories)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -42,7 +42,7 @@ export default function CategoriesPage() {
     try {
       const data: Record<string, unknown> = { name: formData.name, description: formData.description };
       if (formData.parentId) data.parentId = Number(formData.parentId);
-      await mockApi.createCategory(data as { name: string; description?: string; parentId?: number });
+      await realApi.createCategory(data as { name: string; description?: string; parentId?: number });
       setShowModal(false);
       setFormData({ name: '', description: '', parentId: '' });
       loadCategories();
@@ -56,7 +56,7 @@ export default function CategoriesPage() {
     e.preventDefault();
     if (!selectedCategory) return;
     try {
-      await mockApi.createAttribute(selectedCategory.id, {
+      await realApi.createAttribute(selectedCategory.id, {
         name: attrData.name,
         type: attrData.type,
         options: attrData.options.split(',').map((s) => s.trim()),

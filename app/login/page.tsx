@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { api, User } from '@/lib/api';
+import { realApi } from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,10 +18,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-        router.push('/dashboard');
-      // const res = await api.post<{ token: string; user: User }>('/auth/login', { email, password });
-      const user = {"id": 1, "email": "aaa006bd@gmail.com", "role": "admin"}
-      setAuth("res.token", user);
+      const res = await realApi.login({ email, password });
+      setAuth(res.token, res.user);
       router.push('/dashboard');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';

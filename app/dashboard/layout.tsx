@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-64 bg-white border-r border-slate-200 fixed h-full">
         <div className="p-6 border-b border-slate-100">
           <h1 className="text-xl font-bold text-slate-900">Inventory & POS</h1>
-          <p className="text-xs text-slate-500 mt-1">Demo Mode</p>
+          <p className="text-xs text-slate-500 mt-1">Management System</p>
         </div>
         <nav className="p-4">
           <ul className="space-y-1">
@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ul>
         </nav>
         <div className="absolute bottom-0 left-0 w-64 p-4 border-t border-slate-100">
-          <p className="text-xs text-slate-400 text-center">v1.0 Demo</p>
+          <p className="text-xs text-slate-400 text-center">v1.0 Production</p>
         </div>
       </aside>
       <main className="flex-1 ml-64 p-8">{children}</main>

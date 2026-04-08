@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import mockApi from '@/lib/mock-api';
+import { realApi } from '@/lib/api';
 import { Category, Product } from '@/lib/api';
 
 export default function ProductsPage() {
@@ -18,12 +18,12 @@ export default function ProductsPage() {
 
   useEffect(() => {
     Promise.all([
-      mockApi.getCategories(),
-      mockApi.getProducts(),
+      realApi.getCategories(),
+      realApi.getProducts(),
     ])
       .then(([cats, prods]) => {
         setCategories(cats);
-        setProducts(prods);
+        setProducts(prods.data || prods); // Handle paginated response
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -32,7 +32,7 @@ export default function ProductsPage() {
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await mockApi.createProduct({
+      await realApi.createProduct({
         name: formData.name,
         basePrice: Number(formData.basePrice),
         categoryId: Number(formData.categoryId),
@@ -40,8 +40,8 @@ export default function ProductsPage() {
       });
       setShowModal(false);
       setFormData({ name: '', basePrice: '', categoryId: '', attributes: {} });
-      const prods = await mockApi.getProducts();
-      setProducts(prods);
+      const prods = await realApi.getProducts();
+      setProducts(prods.data || prods);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create product';
       alert(message);

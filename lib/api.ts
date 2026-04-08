@@ -39,6 +39,75 @@ export const api = {
     request<T>(endpoint, { method: 'DELETE' }),
 };
 
+// Real API client methods matching mock API interface
+export const realApi = {
+  // Auth methods
+  signup: (data: { email: string; password: string; role: string }) =>
+    api.post<AuthResponse>('/auth/signup', data),
+  
+  login: (data: { email: string; password: string }) =>
+    api.post<AuthResponse>('/auth/login', data),
+
+  // Category methods
+  getCategories: () =>
+    api.get<Category[]>('/products/categories'),
+  
+  getCategory: (id: number) =>
+    api.get<Category>(`/products/categories/${id}`),
+  
+  createCategory: (data: { name: string; description?: string; parentId?: number }) =>
+    api.post<Category>('/products/categories', data),
+  
+  updateCategory: (id: number, data: Partial<{ name: string; description: string; parentId: number }>) =>
+    api.put<Category>(`/products/categories/${id}`, data),
+  
+  deleteCategory: (id: number) =>
+    api.delete(`/products/categories/${id}`),
+  
+  getCategoryChildren: (id: number) =>
+    api.get<Category[]>(`/products/categories/${id}/children`),
+  
+  getCategoryPath: (id: number) =>
+    api.get<Category[]>(`/products/categories/${id}/path`),
+
+  // Attribute methods
+  getAttributes: (categoryId: number) =>
+    api.get<Attribute[]>(`/products/categories/${categoryId}/attributes`),
+  
+  getAttribute: (categoryId: number, id: number) =>
+    api.get<Attribute>(`/products/categories/${categoryId}/attributes/${id}`),
+  
+  createAttribute: (categoryId: number, data: { name: string; type: string; options?: string[]; required: boolean; unit?: string }) =>
+    api.post<Attribute>(`/products/categories/${categoryId}/attributes`, data),
+  
+  updateAttribute: (categoryId: number, id: number, data: Partial<{ name: string; type: string; options: string[]; required: boolean; unit: string }>) =>
+    api.put<Attribute>(`/products/categories/${categoryId}/attributes/${id}`, data),
+  
+  deleteAttribute: (categoryId: number, id: number) =>
+    api.delete(`/products/categories/${categoryId}/attributes/${id}`),
+
+  // Product methods
+  getProducts: (params?: { limit?: number; page?: number }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
+    return api.get<PaginatedResponse<Product>>(`/products${query}`);
+  },
+  
+  getProduct: (id: number) =>
+    api.get<Product>(`/products/${id}`),
+  
+  createProduct: (data: { name: string; description?: string; basePrice: number; categoryId: number; attributes: Record<string, string> }) =>
+    api.post<Product>('/products', data),
+  
+  updateProduct: (id: number, data: Partial<{ name: string; description: string; basePrice: number; categoryId: number; attributes: Record<string, string>; active: boolean }>) =>
+    api.put<Product>(`/products/${id}`, data),
+  
+  deleteProduct: (id: number) =>
+    api.delete(`/products/${id}`),
+  
+  searchProducts: (search: string) =>
+    api.get<SearchResponse<Product>>(`/products/search?search=${encodeURIComponent(search)}`),
+};
+
 export interface User {
   id: number;
   email: string;
@@ -80,4 +149,17 @@ export interface Product {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+// Add new interfaces for API responses
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SearchResponse<T> {
+  data: T[];
+  total: number;
 }

@@ -9,10 +9,20 @@ class ApiError extends Error {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
+  let authHeader: string | undefined;
+  if (token) {
+    // Normalize token: if it already includes a scheme (Bearer, Token), use as-is; otherwise prepend Bearer
+    if (token.startsWith('Bearer ') || token.startsWith('Token ') || token.startsWith('bearer ')) {
+      authHeader = token;
+    } else {
+      authHeader = `Bearer ${token}`;
+    }
+  }
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(authHeader && { Authorization: authHeader }),
     ...options.headers,
   };
 
@@ -30,11 +40,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const api = {
-  get: <T>(endpoint: string) => request<T>(endpoint),
+  get: <T>(endpoint: string, params?: Record<string, string>) => {
+    const url = params 
+      ? `${endpoint}?${new URLSearchParams(params)}` 
+      : endpoint;
+    return request<T>(url);
+  },
   post: <T>(endpoint: string, data: unknown) => 
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) }),
   put: <T>(endpoint: string, data: unknown) => 
     request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+  patch: <T>(endpoint: string, data: unknown) => 
+    request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: <T>(endpoint: string) => 
     request<T>(endpoint, { method: 'DELETE' }),
 };
@@ -104,14 +121,112 @@ export const realApi = {
   deleteProduct: (id: number) =>
     api.delete(`/products/${id}`),
   
-  searchProducts: (search: string) =>
-    api.get<SearchResponse<Product>>(`/products/search?search=${encodeURIComponent(search)}`),
+// Inventory methods
+  receiveBatchInventory: (data: { productId: number; quantity: number; notes?: string }) =>
+    api.post<InventoryItem[]>('/inventory/receive-batch', data),
+  
+  scanBarcode: (barcode: string) =>
+    api.get<InventoryItemWithProduct>('/inventory/scan', { barcode }),
+  
+  sellItem: (data: { barcode: string; notes?: string }) =>
+    api.patch<InventoryItem>('/inventory/sell', data),
+  
+  adjustItem: (data: { barcode: string; status: 'damaged' | 'returned'; notes?: string }) =>
+    api.patch<InventoryItem>('/inventory/adjust', data),
+  
+  getDailyStock: (date: string, productId: number) =>
+    api.get<DailyStockResponse>('/inventory/daily-stock', { date, productId: productId.toString() }),
+  
+  getBarcodeImage: (barcode: string) =>
+    api.get<BarcodeImageResponse>(`/inventory/barcode/${barcode}/image`),
+  
+  getBarcodeImages: (barcodes: string[]) =>
+    api.get<BarcodeImagesResponse>('/inventory/barcode-images', { barcodes: barcodes.join(',') }),
 };
 
 export interface User {
   id: number;
   email: string;
   role: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+  parent?: Category;
+  attributes: Attribute[];
+  products: Product[];
+  active: boolean;
+}
+
+export interface Attribute {
+  id: number;
+  name: string;
+  type: string;
+  unit: string | null;
+  options: string[];
+  required: boolean;
+  categoryId: number;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  description: string | null;
+  basePrice: number;
+  attributes: Record<string, string>;
+  categoryId: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SearchResponse<T> {
+  data: T[];
+  total: number;
+}
+
+export interface InventoryItem {
+  id: number;
+  tenantId: number;
+  productId: number;
+  barcode: string;
+  status: 'in_stock' | 'sold' | 'damaged' | 'returned';
+  acquiredDate: string;
+  soldDate: string | null;
+  adjustedDate: string | null;
+  notes: string | null;
+  updatedAt: string;
+}
+
+export interface InventoryItemWithProduct extends InventoryItem {
+  product: Product;
+}
+
+export interface DailyStockResponse {
+  opening: number;
+  closing: number;
+}
+
+export interface BarcodeImageResponse {
+  svg: string;
+}
+
+export interface BarcodeImagesResponse {
+  images: string[];
 }
 
 export interface Category {

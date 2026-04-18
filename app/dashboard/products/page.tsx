@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { realApi } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { Category, Product } from '@/lib/api';
 
 export default function ProductsPage() {
+  const { token, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,17 +21,46 @@ export default function ProductsPage() {
   });
 
   useEffect(() => {
+    if (!authLoading && !token) {
+      router.replace('/login');
+    }
+  }, [token, authLoading, router]);
+
+  const loadData = () => {
+    setLoading(true);
     Promise.all([
       realApi.getCategories(),
       realApi.getProducts(),
     ])
-      .then(([cats, prods]) => {
+      .then(([cats, prodsRes]) => {
+        const prods = prodsRes.data || prodsRes;
+        // Normalize basePrice to number
+        const normalizedProducts = Array.isArray(prods) ? prods.map(p => ({
+          ...p,
+          basePrice: Number(p.basePrice),
+        })) : [];
         setCategories(cats);
-        setProducts(prods.data || prods); // Handle paginated response
+        setProducts(normalizedProducts);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    if (token) {
+      loadData();
+    }
+  }, [token]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +73,9 @@ export default function ProductsPage() {
       });
       setShowModal(false);
       setFormData({ name: '', basePrice: '', categoryId: '', attributes: {} });
-      const prods = await realApi.getProducts();
-      setProducts(prods.data || prods);
+      const prodsRes = await realApi.getProducts();
+      const prods = prodsRes.data || prodsRes;
+      setProducts((Array.isArray(prods) ? prods.map(p => ({ ...p, basePrice: Number(p.basePrice) })) : []));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create product';
       alert(message);

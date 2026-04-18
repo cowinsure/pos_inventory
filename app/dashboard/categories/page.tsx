@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { realApi } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { Category } from '@/lib/api';
 
 interface CategoryFormData {
@@ -18,6 +20,8 @@ interface AttrFormData {
 }
 
 export default function CategoriesPage() {
+  const { token, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -27,15 +31,59 @@ export default function CategoriesPage() {
   const [attrData, setAttrData] = useState<AttrFormData>({ name: '', type: 'select', options: '', required: true });
 
   const loadCategories = useCallback(() => {
+    setLoading(true);
     realApi.getCategories()
-      .then(setCategories)
+      .then(async (categories) => {
+        // Fetch attributes for each category
+        const categoriesWithAttrs = await Promise.all(
+          categories.map(async (cat) => {
+            try {
+              const attrs = await realApi.getAttributes(cat.id);
+              return { ...cat, attributes: attrs };
+            } catch {
+              return { ...cat, attributes: [] };
+            }
+          })
+        );
+        setCategories(categoriesWithAttrs);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    if (!authLoading && !token) {
+      router.replace('/login');
+    }
+  }, [token, authLoading, router]);
+
+  useEffect(() => {
+    if (token) {
+      loadCategories();
+    }
+  }, [token, loadCategories]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+   }
+
+  const rootCategories = categories.filter((c) => !c.parent);
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,18 +118,6 @@ export default function CategoriesPage() {
       alert(message);
     }
   };
-
-  const rootCategories = categories.filter((c) => !c.parent);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -124,7 +160,12 @@ export default function CategoriesPage() {
                 {cat.attributes.map((attr) => (
                   <span key={attr.id} className="attribute-tag">
                     {attr.name}
-                    <span className="ml-1 text-slate-400">({attr.type})</span>
+                    {attr.options.length > 0 && (
+                      <span className="ml-1 text-slate-400">
+                        ({attr.options.join(', ')})
+                      </span>
+                    )}
+                    {/* <span className="ml-1 text-slate-400">({attr.type})</span> */}
                   </span>
                 ))}
               </div>

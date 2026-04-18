@@ -9,18 +9,24 @@ export default function DashboardHome() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      realApi.getCategories(),
-      realApi.getProducts(),
-    ])
-      .then(([cats, prods]) => {
-        setCategories(cats);
-        setProducts(prods.data || prods); // Handle paginated response
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+   useEffect(() => {
+     Promise.all([
+       realApi.getCategories(),
+       realApi.getProducts(),
+     ])
+       .then(([cats, prodsRes]) => {
+         const prods = prodsRes.data || prodsRes;
+         // Normalize basePrice to number
+         const normalizedProducts = Array.isArray(prods) ? prods.map(p => ({
+           ...p,
+           basePrice: Number(p.basePrice),
+         })) : [];
+         setCategories(cats);
+         setProducts(normalizedProducts);
+       })
+       .catch(console.error)
+       .finally(() => setLoading(false));
+   }, []);
 
   if (loading) {
     return (

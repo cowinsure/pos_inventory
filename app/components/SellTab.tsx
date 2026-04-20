@@ -1,16 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { realApi, InventoryItemWithProduct } from '@/lib/api';
 
 interface ScannedItem {
   item: InventoryItemWithProduct;
   notes: string;
+  discountAmount?: number;
 }
 
 interface SellTabProps {
   onSuccess: (items: InventoryItemWithProduct[]) => void;
   showMessage: (type: 'success' | 'error', text: string) => void;
+}
+
+const CART_STORAGE_KEY = 'sell_cart_items';
+
+function loadCartFromStorage(): ScannedItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCartToStorage(items: ScannedItem[]) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // Ignore storage errors
+  }
 }
 
 export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
@@ -19,8 +40,21 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [cartOpen, setCartOpen] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const totalItems = scannedItems.length;
+
+  useEffect(() => {
+    const storedItems = loadCartFromStorage();
+    setScannedItems(storedItems);
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated) {
+      saveCartToStorage(scannedItems);
+    }
+  }, [scannedItems, isHydrated]);
 
   const handleScanBarcode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +77,11 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
         return;
       }
 
-      setScannedItems(prev => [...prev, { item, notes: '' }]);
-      showMessage('success', `Added: ${item.product?.name || item.barcode}`);
+      setScannedItems(prev => {
+        const newItems = [...prev, { item, notes: '' }];
+        showMessage('success', `Added: ${item.product?.name || item.barcode}`);
+        return newItems;
+      });
       setBarcodeInput('');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Item not found';
@@ -60,8 +97,19 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
     );
   };
 
+  const updateItemDiscount = (barcode: string, discountAmount: number | undefined) => {
+    setScannedItems(prev => 
+      prev.map(s => s.item.barcode === barcode ? { ...s, discountAmount } : s)
+    );
+  };
+
   const removeItem = (barcode: string) => {
     setScannedItems(prev => prev.filter(s => s.item.barcode !== barcode));
+  };
+
+  const clearCart = () => {
+    setScannedItems([]);
+    saveCartToStorage([]);
   };
 
   const handleSellBatch = async () => {
@@ -71,6 +119,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
     try {
       const itemsToSell = scannedItems.map(s => ({
         barcode: s.item.barcode,
+        discountAmount: s.discountAmount || undefined,
         notes: s.notes || undefined,
       }));
 
@@ -79,6 +128,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
       showMessage('success', `Successfully sold ${result.length} item(s)`);
       onSuccess(result);
       setScannedItems([]);
+      saveCartToStorage([]);
       setCartOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sell items';
@@ -240,13 +290,28 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                         </button>
                       </div>
                       
-                      <input
-                        type="text"
-                        value={scanned.notes}
-                        onChange={(e) => updateItemNotes(scanned.item.barcode, e.target.value)}
-                        className="input text-xs"
-                        placeholder="Add notes (optional)..."
-                      />
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={scanned.discountAmount || ''}
+                            onChange={(e) => updateItemDiscount(scanned.item.barcode, e.target.value ? parseFloat(e.target.value) : undefined)}
+                            className="input text-xs"
+                            placeholder="Discount ($)"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={scanned.notes}
+                            onChange={(e) => updateItemNotes(scanned.item.barcode, e.target.value)}
+                            className="input text-xs"
+                            placeholder="Notes (optional)"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -262,7 +327,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setScannedItems([])}
+                    onClick={clearCart}
                     className="btn btn-secondary flex-1"
                     disabled={loading}
                   >

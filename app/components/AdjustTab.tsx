@@ -28,7 +28,7 @@ export default function AdjustTab({ onSuccess, showMessage }: AdjustTabProps) {
       const updated = await realApi.adjustItem({
         barcode: form.barcode,
         status: form.status,
-        notes: form.notes || undefined,
+        notes: form.notes || "",
       });
       showMessage('success', `Item marked as ${form.status}`);
       setForm({ barcode: '', status: 'damaged', notes: '' });

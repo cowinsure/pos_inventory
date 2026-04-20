@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { realApi, InventoryItemWithProduct } from '@/lib/api';
 
 interface ScannedItem {
@@ -43,6 +43,18 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   const totalItems = scannedItems.length;
+
+  const cartTotals = useMemo(() => {
+    const totalPrice = scannedItems.reduce((sum, item) => {
+      const price = item.item.product?.basePrice ? parseFloat(item.item.product.basePrice) : 0;
+      return sum + price;
+    }, 0);
+    const totalDiscount = scannedItems.reduce((sum, item) => {
+      return sum + (item.discountAmount || 0);
+    }, 0);
+    const subtotal = totalPrice - totalDiscount;
+    return { totalPrice, totalDiscount, subtotal };
+  }, [scannedItems]);
 
   useEffect(() => {
     const storedItems = loadCartFromStorage();
@@ -119,7 +131,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
     try {
       const itemsToSell = scannedItems.map(s => ({
         barcode: s.item.barcode,
-        discountAmount: s.discountAmount || undefined,
+        discountAmount: s.discountAmount || 0,
         notes: s.notes || undefined,
       }));
 
@@ -278,6 +290,9 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                           <p className="text-xs text-slate-500 font-mono">
                             {scanned.item.barcode}
                           </p>
+                          <p className="text-xs font-medium text-slate-700">
+                            ${scanned.item.product?.basePrice || '0.00'}
+                          </p>
                         </div>
                         <button
                           onClick={() => removeItem(scanned.item.barcode)}
@@ -320,10 +335,19 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
 
             {totalItems > 0 && (
               <div className="p-4 border-t border-slate-200 bg-slate-50">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-slate-600">
-                    {totalItems} item{totalItems !== 1 ? 's' : ''} ready to sell
-                  </span>
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Total ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
+                    <span className="text-slate-900">${cartTotals.totalPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Discount</span>
+                    <span className="text-red-600">-${cartTotals.totalDiscount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-semibold border-t border-slate-200 pt-2">
+                    <span className="text-slate-900">Subtotal</span>
+                    <span className="text-slate-900">${cartTotals.subtotal.toFixed(2)}</span>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button

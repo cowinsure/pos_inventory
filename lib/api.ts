@@ -122,6 +122,9 @@ export const realApi = {
     api.delete(`/products/${id}`),
   
 // Inventory methods
+  getInventory: () =>
+    api.get<InventoryItemWithProduct[]>('/inventory'),
+  
   receiveBatchInventory: (data: { productId: number; quantity: number; notes?: string }) =>
     api.post<InventoryItem[]>('/inventory/receive-batch', data),
   
@@ -130,6 +133,9 @@ export const realApi = {
   
   sellItem: (data: { barcode: string; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/sell', data),
+  
+  sellBatchItems: (items: { barcode: string; notes?: string }[]) =>
+    api.patch<InventoryItem[]>('/inventory/sell', items),
   
   adjustItem: (data: { barcode: string; status: 'damaged' | 'returned'; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/adjust', data),

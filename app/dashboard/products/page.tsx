@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { realApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { Category, Product } from '@/lib/api';
+import { Category, Product, Attribute } from '@/lib/api';
 
 export default function ProductsPage() {
   const { token, loading: authLoading } = useAuth();
@@ -13,6 +13,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [categoryAttributes, setCategoryAttributes] = useState<Attribute[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     basePrice: '',
@@ -65,14 +66,16 @@ export default function ProductsPage() {
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const attrsObject = { ...formData.attributes };
       await realApi.createProduct({
         name: formData.name,
         basePrice: Number(formData.basePrice),
         categoryId: Number(formData.categoryId),
-        attributes: formData.attributes,
+        attributes: [attrsObject],
       });
       setShowModal(false);
       setFormData({ name: '', basePrice: '', categoryId: '', attributes: {} });
+      setCategoryAttributes([]);
       const prodsRes = await realApi.getProducts();
       const prods = prodsRes.data || prodsRes;
       setProducts((Array.isArray(prods) ? prods.map(p => ({ ...p, basePrice: Number(p.basePrice) })) : []));
@@ -89,7 +92,20 @@ export default function ProductsPage() {
     });
   };
 
-  const selectedCategory = categories.find((c) => c.id === Number(formData.categoryId));
+  const handleCategoryChange = async (categoryId: string) => {
+    setFormData({ ...formData, categoryId, attributes: {} });
+    if (categoryId) {
+      try {
+        const attrs = await realApi.getAttributes(Number(categoryId));
+        setCategoryAttributes(attrs);
+      } catch (err) {
+        console.error(err);
+        setCategoryAttributes([]);
+      }
+    } else {
+      setCategoryAttributes([]);
+    }
+  };
 
   if (loading) {
     return (
@@ -201,7 +217,7 @@ export default function ProductsPage() {
                 <label className="label">Category</label>
                 <select
                   value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value, attributes: {} })}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="input"
                   required
                 >
@@ -212,10 +228,10 @@ export default function ProductsPage() {
                 </select>
               </div>
               
-              {(selectedCategory?.attributes?.length ?? 0) > 0 && (
+              {categoryAttributes.length > 0 && (
                 <div className="mb-4 p-4 bg-slate-50 rounded-lg">
                   <p className="text-sm font-medium text-slate-700 mb-3">Product Attributes</p>
-                  {selectedCategory?.attributes?.map((attr) => (
+                  {categoryAttributes.map((attr) => (
                     <div key={attr.id} className="mb-3">
                       <label className="label">
                         {attr.name} {attr.required && <span className="text-red-500">*</span>}

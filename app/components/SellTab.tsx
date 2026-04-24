@@ -39,8 +39,6 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [cartOpen, setCartOpen] = useState(true);
-  const [isHydrated, setIsHydrated] = useState(false);
   const [customerId, setCustomerId] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
@@ -71,14 +69,11 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   useEffect(() => {
     const storedItems = loadCartFromStorage();
     setScannedItems(storedItems);
-    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (isHydrated) {
-      saveCartToStorage(scannedItems);
-    }
-  }, [scannedItems, isHydrated]);
+    saveCartToStorage(scannedItems);
+  }, [scannedItems]);
 
   useEffect(() => {
     realApi.getCustomers()
@@ -184,8 +179,6 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
       showMessage('success', `Successfully sold ${result.length} item(s)`);
       onSuccess(result);
       setScannedItems([]);
-      saveCartToStorage([]);
-      setCartOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sell items';
       showMessage('error', message);
@@ -195,49 +188,14 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)]">
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        @keyframes slideOut {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-        .cart-panel-enter {
-          animation: slideIn 0.3s ease-out forwards;
-        }
-        .cart-panel-exit {
-          animation: slideOut 0.3s ease-in forwards;
-        }
-      `}</style>
-
-      <div className="flex-1 p-6">
-        <div className="card p-6 ">
+    <div className="min-h-[calc(100vh-8rem)]">
+      <div className="p-6">
+        <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Scan Items</h2>
-            <button
-              onClick={() => setCartOpen(!cartOpen)}
-              className={`px-3 py-1 text-sm font-medium rounded-full transition-colors cursor-pointer ${cartOpen ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
-            >
-              {cartOpen ? 'Hide Cart' : `${totalItems} item${totalItems !== 1 ? 's' : ''} in cart`}
-            </button>
+            <h2 className="text-lg font-semibold text-slate-900">Scan & Sell Items</h2>
           </div>
           
-          <form onSubmit={handleScanBarcode} className="flex gap-3">
+          <form onSubmit={handleScanBarcode} className="flex gap-3 mb-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -266,12 +224,12 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
             </button>
           </form>
 
-          <p className="text-sm text-slate-500 mt-2 mb-4">
-            Scan multiple barcodes to add them to the sale batch
+          <p className="text-sm text-slate-500 mb-6">
+            Scan multiple barcodes to add items to your sale
           </p>
 
-          <div className="mb-4">
-            <label className="label">Customer</label>
+          <div className="mb-6">
+            <label className="label">Customer *</label>
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -406,9 +364,8 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
             )}
           </div>
 
-          {totalItems > 0 && (
-            <div className="mb-6">
-              <h3 className="text-md font-semibold text-slate-900 mb-3">Scanned Items ({totalItems})</h3>
+          {totalItems > 0 ? (
+            <>
               <div className="table-container">
                 <table>
                   <thead>
@@ -481,7 +438,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
 
               <button
                 onClick={handleSellBatch}
-                className="w-full btn btn-primary mt-3"
+                className="w-full btn btn-primary mt-4"
                 disabled={loading || !customerId}
               >
                 {loading ? (
@@ -496,10 +453,8 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                   `Sell ${totalItems > 1 ? `${totalItems} Items` : 'Item'}`
                 )}
               </button>
-            </div>
-          )}
-
-          {totalItems === 0 && (
+            </>
+          ) : (
             <div className="empty-state">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                 <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -512,111 +467,6 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
           )}
         </div>
       </div>
-
-      {cartOpen && (
-        <div className={`w-96 bg-white border-l border-slate-200 shadow-xl ${totalItems > 0 ? 'cart-panel-enter' : ''}`}>
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <h2 className="text-lg font-semibold text-slate-900">Cart</h2>
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                  {totalItems}
-                </span>
-              </div>
-              <button
-                onClick={() => setCartOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {customerId && customers.find(c => c.id === Number(customerId)) && (
-              <div className="px-4 pb-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <p className="text-xs font-medium text-blue-900">Customer</p>
-                  <p className="text-sm text-blue-900 truncate">
-                    {customers.find(c => c.id === Number(customerId))?.name}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {totalItems === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm text-slate-500">Your cart is empty</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {scannedItems.map((scanned) => (
-                    <div 
-                      key={scanned.item.id}
-                      className="p-4 bg-slate-50 rounded-lg border border-slate-200"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-slate-900 truncate text-sm">
-                              {scanned.item.product?.name}
-                            </span>
-                            <span className="badge bg-green-100 text-green-700 text-xs">
-                              In Stock
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 font-mono">
-                            {scanned.item.barcode}
-                          </p>
-                          <p className="text-xs font-medium text-slate-700">
-                            ${Number(scanned.item.product?.basePrice || 0).toFixed(2)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => removeItem(scanned.item.barcode)}
-                          className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Remove item"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={scanned.discountAmount || ''}
-                            onChange={(e) => updateItemDiscount(scanned.item.barcode, e.target.value ? parseFloat(e.target.value) : undefined)}
-                            className="input text-xs"
-                            placeholder="Discount ($)"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={scanned.notes}
-                            onChange={(e) => updateItemNotes(scanned.item.barcode, e.target.value)}
-                            className="input text-xs"
-                            placeholder="Notes (optional)"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

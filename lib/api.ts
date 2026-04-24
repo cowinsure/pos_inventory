@@ -134,6 +134,13 @@ export const realApi = {
   deleteSupplier: (id: number) =>
     api.delete(`/suppliers/${id}`),
 
+  // Customer methods
+  getCustomers: () =>
+    api.get<Customer[]>('/customers'),
+
+  createCustomer: (data: { name: string; phone: string; email: string; address: string }) =>
+    api.post<Customer>('/customers', data),
+
   // Inventory methods
   getInventory: () =>
     api.get<InventoryItemWithProduct[]>('/inventory/items'),
@@ -147,7 +154,7 @@ export const realApi = {
   sellItem: (data: { barcode: string; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/sell', data),
   
-  sellBatchItems: (items: { barcode: string; discountAmount?: number; notes?: string }[]) =>
+  sellBatchItems: (items: { barcode: string; discountAmount?: number; notes?: string; customerId?: number }[]) =>
     api.patch<InventoryItem[]>('/inventory/sell', { items }),
   
   adjustItem: (data: { barcode: string; status: 'damaged' | 'returned'; notes?: string }) =>
@@ -228,6 +235,16 @@ export interface InventoryItem {
   soldDate: string | null;
   adjustedDate: string | null;
   notes: string | null;
+  updatedAt: string;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  createdAt: string;
   updatedAt: string;
 }
 

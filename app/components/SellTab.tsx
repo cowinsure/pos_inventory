@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { realApi, InventoryItemWithProduct } from '@/lib/api';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { realApi, InventoryItemWithProduct, Customer } from '@/lib/api';
 
 interface ScannedItem {
   item: InventoryItemWithProduct;
@@ -41,6 +41,18 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   const [searching, setSearching] = useState(false);
   const [cartOpen, setCartOpen] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [customerId, setCustomerId] = useState('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+  });
+  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
+  const [customerFilter, setCustomerFilter] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const totalItems = scannedItems.length;
 
@@ -67,6 +79,42 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
       saveCartToStorage(scannedItems);
     }
   }, [scannedItems, isHydrated]);
+
+  useEffect(() => {
+    realApi.getCustomers()
+      .then((data) => {
+        setCustomers(Array.isArray(data) ? data : []);
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const createCustomer = async () => {
+    if (!newCustomer.name || !newCustomer.phone || !newCustomer.email) {
+      showMessage('error', 'Please fill in name, phone, and email');
+      return;
+    }
+    try {
+      const customer = await realApi.createCustomer(newCustomer);
+      setCustomers(prev => [...prev, customer]);
+      setCustomerId(customer.id.toString());
+      setShowCustomerForm(false);
+      setNewCustomer({ name: '', phone: '', email: '', address: '' });
+      showMessage('success', 'Customer created successfully');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create customer';
+      showMessage('error', message);
+    }
+  };
 
   const handleScanBarcode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,13 +167,8 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
     setScannedItems(prev => prev.filter(s => s.item.barcode !== barcode));
   };
 
-  const clearCart = () => {
-    setScannedItems([]);
-    saveCartToStorage([]);
-  };
-
   const handleSellBatch = async () => {
-    if (scannedItems.length === 0) return;
+    if (scannedItems.length === 0 || !customerId) return;
     
     setLoading(true);
     try {
@@ -133,6 +176,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
         barcode: s.item.barcode,
         discountAmount: s.discountAmount || 0,
         notes: s.notes || undefined,
+        customerId: Number(customerId),
       }));
 
       const result = await realApi.sellBatchItems(itemsToSell);
@@ -226,6 +270,142 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
             Scan multiple barcodes to add them to the sale batch
           </p>
 
+          <div className="mb-4">
+            <label className="label">Customer</label>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                className="input w-full text-left flex items-center justify-between"
+                onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
+              >
+                <span className="truncate">
+                  {customerId ? customers.find(c => c.id === Number(customerId))?.name || 'Select customer' : 'Select customer'}
+                </span>
+                <svg className={`w-4 h-4 text-slate-400 transition-transform ${customerDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {customerDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="sticky top-0 p-2 border-b border-slate-100 bg-slate-50">
+                    <input
+                      type="text"
+                      value={customerFilter}
+                      onChange={(e) => setCustomerFilter(e.target.value)}
+                      className="input text-sm py-1 w-full pr-3 pl-10"
+                      placeholder="Search customers..."
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <svg className="w-4 h-4 text-slate-400 absolute left-5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {customers
+                      .filter((c) =>
+                        c.name.toLowerCase().includes(customerFilter.toLowerCase()) ||
+                        c.phone.includes(customerFilter)
+                      )
+                      .map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-slate-100 text-sm"
+                          onClick={() => {
+                            setCustomerId(c.id.toString());
+                            setCustomerDropdownOpen(false);
+                            setCustomerFilter('');
+                          }}
+                        >
+                          <div className="font-medium">{c.name}</div>
+                          <div className="text-xs text-slate-500">{c.phone}</div>
+                        </button>
+                      ))}
+                    {customers.filter((c) =>
+                      c.name.toLowerCase().includes(customerFilter.toLowerCase()) ||
+                      c.phone.includes(customerFilter)
+                    ).length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">No customers found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCustomerForm(!showCustomerForm)}
+              className="mt-2 w-full btn btn-secondary text-sm py-2"
+            >
+              {showCustomerForm ? 'Cancel' : '+ Add New Customer'}
+            </button>
+            {showCustomerForm && (
+              <div className="mt-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">Create Customer</h4>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={newCustomer.name}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                      className="input text-sm py-2 pl-10 pr-3"
+                      placeholder="Name *"
+                      required
+                    />
+                  </div>
+                  <div className="relative">
+                    <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <input
+                      type="tel"
+                      value={newCustomer.phone}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                      className="input text-sm py-2 pl-10 pr-3"
+                      placeholder="Phone *"
+                      required
+                    />
+                  </div>
+                  <div className="relative">
+                    <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <input
+                      type="email"
+                      value={newCustomer.email}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                      className="input text-sm py-2 pl-10 pr-3"
+                      placeholder="Email *"
+                      required
+                    />
+                  </div>
+                  <div className="relative">
+                    <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={newCustomer.address}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                      className="input text-sm py-2 pl-10 pr-3"
+                      placeholder="Address (optional)"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={createCustomer}
+                    className="w-full btn btn-primary text-sm py-2"
+                  >
+                    Create Customer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {totalItems > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-semibold text-slate-900 mb-3">Scanned Items ({totalItems})</h3>
@@ -302,7 +482,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
               <button
                 onClick={handleSellBatch}
                 className="w-full btn btn-primary mt-3"
-                disabled={loading}
+                disabled={loading || !customerId}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -355,6 +535,17 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                 </svg>
               </button>
             </div>
+
+            {customerId && customers.find(c => c.id === Number(customerId)) && (
+              <div className="px-4 pb-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <p className="text-xs font-medium text-blue-900">Customer</p>
+                  <p className="text-sm text-blue-900 truncate">
+                    {customers.find(c => c.id === Number(customerId))?.name}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-4">
               {totalItems === 0 ? (

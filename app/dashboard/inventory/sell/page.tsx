@@ -21,14 +21,14 @@ export default function InventorySellPage() {
   return (
     <div>
       <div className="page-header">
-        <div>
+        {/* <div>
           <h1 className="page-title">Sell Inventory</h1>
           <p className="page-subtitle">Sell items from inventory</p>
-        </div>
+        </div> */}
       </div>
 
       {message && (
-        <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+        <div className={` p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
           {message.text}
         </div>
       )}

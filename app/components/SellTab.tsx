@@ -182,7 +182,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
       `}</style>
 
       <div className="flex-1 p-6">
-        <div className="card p-6 mb-6">
+        <div className="card p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Scan Items</h2>
             <button
@@ -213,7 +213,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
               {searching ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Scanning...
@@ -222,24 +222,115 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
             </button>
           </form>
 
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-sm text-slate-500 mt-2 mb-4">
             Scan multiple barcodes to add them to the sale batch
           </p>
-        </div>
 
-        {totalItems === 0 && (
-          <div className="card p-12">
-            <div className="text-center">
+          {totalItems > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-semibold text-slate-900 mb-3">Scanned Items ({totalItems})</h3>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Barcode</th>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Discount</th>
+                      <th>Notes</th>
+                      <th className="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scannedItems.map((scanned) => (
+                      <tr key={scanned.item.id} className="hover:bg-slate-50">
+                        <td className="font-mono text-sm text-slate-600">{scanned.item.barcode}</td>
+                        <td className="font-medium text-slate-900">{scanned.item.product?.name}</td>
+                        <td className="text-slate-900">${Number(scanned.item.product?.basePrice || 0).toFixed(2)}</td>
+                        <td>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={scanned.discountAmount || ''}
+                            onChange={(e) => updateItemDiscount(scanned.item.barcode, e.target.value ? parseFloat(e.target.value) : undefined)}
+                            className="input text-xs py-1"
+                            placeholder="0.00"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={scanned.notes}
+                            onChange={(e) => updateItemNotes(scanned.item.barcode, e.target.value)}
+                            className="input text-xs py-1"
+                            placeholder="Notes..."
+                          />
+                        </td>
+                        <td className="text-right">
+                          <button
+                            onClick={() => removeItem(scanned.item.barcode)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove item"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 p-4 border-t border-slate-200 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-slate-600">Total ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
+                  <span className="text-slate-900 font-medium">${cartTotals.totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-slate-600">Discount</span>
+                  <span className="text-red-600 font-medium">-${cartTotals.totalDiscount.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-lg font-semibold border-t border-slate-200 pt-2">
+                  <span className="text-slate-900">Subtotal</span>
+                  <span className="text-slate-900">${cartTotals.subtotal.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSellBatch}
+                className="w-full btn btn-primary mt-3"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Selling...
+                  </span>
+                ) : (
+                  `Sell ${totalItems > 1 ? `${totalItems} Items` : 'Item'}`
+                )}
+              </button>
+            </div>
+          )}
+
+          {totalItems === 0 && (
+            <div className="empty-state">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                 <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-1">No items scanned yet</h3>
-              <p className="text-sm text-slate-500">Scan barcodes to add items to your sale</p>
+              <p className="font-medium text-slate-900">No items scanned yet</p>
+              <p className="text-sm text-slate-500 mt-1">Scan barcodes to add items to your sale</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {cartOpen && (
@@ -291,7 +382,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                             {scanned.item.barcode}
                           </p>
                           <p className="text-xs font-medium text-slate-700">
-                            ${scanned.item.product?.basePrice || '0.00'}
+                            ${Number(scanned.item.product?.basePrice || 0).toFixed(2)}
                           </p>
                         </div>
                         <button
@@ -332,50 +423,6 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                 </div>
               )}
             </div>
-
-            {totalItems > 0 && (
-              <div className="p-4 border-t border-slate-200 bg-slate-50">
-                <div className="space-y-2 mb-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Total ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
-                    <span className="text-slate-900">${cartTotals.totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Discount</span>
-                    <span className="text-red-600">-${cartTotals.totalDiscount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm font-semibold border-t border-slate-200 pt-2">
-                    <span className="text-slate-900">Subtotal</span>
-                    <span className="text-slate-900">${cartTotals.subtotal.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={clearCart}
-                    className="btn btn-secondary flex-1"
-                    disabled={loading}
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onClick={handleSellBatch}
-                    className="btn btn-primary flex-1"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                      </span>
-                    ) : (
-                      `Sell ${totalItems > 1 ? `${totalItems} Items` : 'Item'}`
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

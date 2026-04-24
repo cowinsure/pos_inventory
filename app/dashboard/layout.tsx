@@ -15,6 +15,7 @@ const navItems = [
   { href: '/dashboard/inventory/adjust', label: 'Adjust', icon: 'adjust' },
   { href: '/dashboard/inventory/daily-stock', label: 'Daily Stock', icon: 'stock' },
   { href: '/dashboard/inventory/barcode', label: 'Barcode', icon: 'barcode' },
+  { href: '/dashboard/suppliers', label: 'Suppliers', icon: 'folder' },
 ];
 
 const icons: Record<string, ReactNode> = {

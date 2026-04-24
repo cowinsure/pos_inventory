@@ -121,11 +121,24 @@ export const realApi = {
   deleteProduct: (id: number) =>
     api.delete(`/products/${id}`),
   
-// Inventory methods
+  // Supplier methods
+  getSuppliers: () =>
+    api.get<Supplier[]>('/suppliers'),
+  
+  createSupplier: (data: { name: string; phone: string; description?: string; contactEmail: string }) =>
+    api.post<Supplier>('/suppliers', data),
+  
+  updateSupplier: (id: number, data: { name?: string; phone?: string; description?: string | null; contactEmail?: string }) =>
+    api.put<Supplier>(`/suppliers/${id}`, data),
+  
+  deleteSupplier: (id: number) =>
+    api.delete(`/suppliers/${id}`),
+
+  // Inventory methods
   getInventory: () =>
     api.get<InventoryItemWithProduct[]>('/inventory/items'),
   
-  receiveBatchInventory: (data: { productId: number; quantity: number; notes?: string }) =>
+  receiveBatchInventory: (data: { productId: number; quantity: number; supplierId: number; notes?: string }) =>
     api.post<InventoryItem[]>('/inventory/receive-batch', data),
   
   scanBarcode: (barcode: string) =>

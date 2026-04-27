@@ -1,9 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { realApi } from '@/lib/api';
+import { realApi, type AuthResponse } from '@/lib/api';
+
+type SignupResponse = AuthResponse & {
+  access_token?: string;
+  data?: {
+    token?: string;
+  };
+};
+
+const roleOptions = [
+  {
+    value: 'admin',
+    label: 'Admin',
+    description: 'Full access to products, stock, and reporting.',
+  },
+  {
+    value: 'user',
+    label: 'User',
+    description: 'Day-to-day access for inventory and sales tasks.',
+  },
+];
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +32,7 @@ export default function SignupPage() {
   const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signup: setAuth, token, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -25,8 +47,8 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await realApi.signup({ email, password, role });
-      const token = res.token || (res as any).access_token || (res as any).data?.token;
+      const res = (await realApi.signup({ email, password, role })) as SignupResponse;
+      const token = res.token || res.access_token || res.data?.token;
       if (!token) {
         throw new Error('Invalid response: missing token');
       }
@@ -41,9 +63,12 @@ export default function SignupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.16),_transparent_32%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_48%,#fff7ed_100%)] px-6">
+        <div className="flex flex-col items-center gap-4 text-slate-600">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/70 bg-white/80 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.45)] backdrop-blur">
+            <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-sky-500 border-t-transparent" />
+          </div>
+          <p className="text-sm font-medium">Setting up your account...</p>
         </div>
       </div>
     );
@@ -51,64 +76,175 @@ export default function SignupPage() {
 
   if (token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Redirecting...</div>
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.16),_transparent_32%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_48%,#fff7ed_100%)] px-6">
+        <div className="rounded-3xl border border-white/70 bg-white/85 px-6 py-5 text-sm font-medium text-slate-600 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.35)] backdrop-blur">
+          Redirecting to dashboard...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Sign Up</h1>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded">{error}</div>
-        )}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),_transparent_30%),radial-gradient(circle_at_bottom_left,_rgba(249,115,22,0.14),_transparent_28%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_42%,#fff7ed_100%)] px-6 py-8 text-slate-900">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="order-2 space-y-8 lg:order-1">
+          <div className="inline-flex items-center gap-3 rounded-full border border-slate-200/80 bg-white/75 px-4 py-2 text-sm text-slate-600 shadow-[0_10px_35px_-22px_rgba(15,23,42,0.4)] backdrop-blur">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
+              IP
+            </span>
+            Inventory &amp; POS
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
+
+          <div className="max-w-xl space-y-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">
+              Start with a steady foundation
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+              Create your workspace and get inventory, sales, and team access aligned from day one.
+            </h1>
+            <p className="max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
+              Set up an account that gives your store a cleaner starting point for stock control,
+              faster checkout, and clearer reporting across the whole operation.
+            </p>
           </div>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              ['Quick onboarding', 'Open the workspace and start organizing products right away.'],
+              ['Role-based setup', 'Choose how the account enters your inventory workflow.'],
+              ['Built for daily use', 'Move from setup to real operations without friction.'],
+            ].map(([title, copy]) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.45)] backdrop-blur"
+              >
+                <div className="mb-3 h-1.5 w-10 rounded-full bg-gradient-to-r from-sky-500 to-orange-400" />
+                <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{copy}</p>
+              </div>
+            ))}
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Signing up...' : 'Sign Up'}
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">Login</a>
-        </p>
+        </section>
+
+        <section className="order-1 lg:order-2">
+          <div className="mx-auto w-full max-w-md rounded-[28px] border border-white/80 bg-white/88 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.38)] backdrop-blur sm:p-8">
+            <div className="mb-8 space-y-3">
+              <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                New workspace
+              </div>
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+                  Create account
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Add your credentials and choose the role for this first session.
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                  required
+                />
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="text-xs font-semibold text-sky-700 transition hover:text-sky-800"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a secure password"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Role
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {roleOptions.map((option) => {
+                    const isSelected = role === option.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setRole(option.value)}
+                        className={`rounded-2xl border px-4 py-4 text-left transition ${
+                          isSelected
+                            ? 'border-sky-400 bg-sky-50 shadow-[0_16px_36px_-28px_rgba(14,165,233,0.8)]'
+                            : 'border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-semibold text-slate-900">
+                            {option.label}
+                          </span>
+                          <span
+                            className={`h-3 w-3 rounded-full ${
+                              isSelected ? 'bg-sky-500' : 'bg-slate-300'
+                            }`}
+                          />
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-slate-600">
+                          {option.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {loading ? 'Creating account...' : 'Create workspace'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-slate-600">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-semibold text-sky-700 transition hover:text-sky-800"
+              >
+                Log in
+              </Link>
+            </p>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

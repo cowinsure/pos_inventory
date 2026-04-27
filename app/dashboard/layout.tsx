@@ -20,54 +20,107 @@ const navItems = [
 
 const icons: Record<string, ReactNode> = {
   home: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0l7-7 7 7M19 14v4a1 1 0 01-1 1h-3m0 0v-4" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 12l2-2 7-7 7 7 2 2M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6"
+      />
     </svg>
   ),
   folder: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+      />
     </svg>
   ),
   box: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+      />
     </svg>
   ),
   inventory: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+      />
     </svg>
   ),
   receive: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 9.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 5v10m0 0l-4-4m4 4l4-4M5 19h14"
+      />
     </svg>
   ),
   sell: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   ),
   adjust: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h5M20 20v-5h-5M5.5 9A8 8 0 0119 12m-.5 3A8 8 0 015 12"
+      />
     </svg>
   ),
   stock: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 19V9m7 10V5m7 14v-7M3 19h18"
+      />
     </svg>
   ),
   barcode: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 5v14M9 5v14M12 7v10M15 5v14M19 5v14"
+      />
     </svg>
   ),
 };
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+function isItemActive(pathname: string, href: string) {
+  if (href === '/dashboard') {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? '/dashboard';
   const { token, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -75,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!loading && !token) {
       router.replace('/login');
     }
-  }, [token, loading, router]);
+  }, [loading, router, token]);
 
   const handleLogout = () => {
     logout();
@@ -84,47 +137,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-slate-500 mt-3">Signing in…</p>
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.16),_transparent_32%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_48%,#fff7ed_100%)] px-6">
+        <div className="flex flex-col items-center gap-4 text-slate-600">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/70 bg-white/80 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.45)] backdrop-blur">
+            <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-sky-500 border-t-transparent" />
+          </div>
+          <p className="text-sm font-medium">Preparing your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  const segments = pathname?.split('/').filter(Boolean) ?? [];
+  const segments = pathname.split('/').filter(Boolean);
   const rawTitle = segments.length ? segments[segments.length - 1] : 'dashboard';
-  const pageTitle = rawTitle.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const pageTitle = rawTitle.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  const activeItem = navItems.find((item) => isItemActive(pathname, item.href)) ?? navItems[0];
+  const userEmail = 'owner@example.com';
+  const userLabel = 'Workspace Owner';
+  const userInitial = userEmail.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      <aside className="w-72 bg-white border-r border-slate-200 fixed h-full shadow-sm">
-        <div className="p-6 border-b border-slate-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Inventory & POS</h1>
-              <p className="text-xs text-slate-500 mt-1">Management System</p>
-            </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(249,115,22,0.12),_transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef6ff_48%,#fffaf5_100%)] text-slate-900">
+      <aside className="fixed inset-y-4 left-4 z-30 hidden w-80 flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.38)] backdrop-blur lg:flex">
+        <div className="border-b border-slate-100/90 px-6 py-6">
+          <div className="inline-flex items-center gap-3 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm text-slate-600 shadow-[0_10px_35px_-22px_rgba(15,23,42,0.35)]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
+              IP
+            </span>
+            Inventory &amp; POS
+          </div>
+          <div className="mt-5 space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+              Operations dashboard
+            </h1>
+            <p className="max-w-xs text-sm leading-6 text-slate-600">
+              A focused workspace for stock movement, products, suppliers, and checkout flow.
+            </p>
           </div>
         </div>
 
-        <nav className="p-4 overflow-auto h-[calc(100vh-220px)]">
-          <ul className="space-y-1">
+        <nav className="flex-1 overflow-auto px-4 py-5">
+          <div className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Navigation
+          </div>
+          <ul className="space-y-2">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isItemActive(pathname, item.href);
+
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    className={`group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium transition ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                        : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-slate-950 text-white shadow-[0_18px_35px_-22px_rgba(15,23,42,0.75)]'
+                        : 'text-slate-700 hover:bg-white hover:text-slate-950 hover:shadow-[0_14px_32px_-26px_rgba(15,23,42,0.35)]'
                     }`}
                   >
-                    <span className="text-slate-400">{icons[item.icon]}</span>
+                    <span
+                      className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+                        isActive
+                          ? 'bg-white/14 text-white'
+                          : 'bg-slate-100 text-slate-500 group-hover:bg-sky-50 group-hover:text-sky-700'
+                      }`}
+                    >
+                      {icons[item.icon]}
+                    </span>
                     <span className="truncate">{item.label}</span>
+                    {isActive ? (
+                      <span className="ml-auto h-2.5 w-2.5 rounded-full bg-sky-300" />
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -132,38 +214,96 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ul>
         </nav>
 
-        <div className="absolute bottom-0 left-0 w-full p-4 border-t border-slate-100 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">U</div>
+        <div className="border-t border-slate-100/90 bg-white/75 p-4">
+          <div className="rounded-3xl border border-slate-100 bg-white/85 p-4 shadow-[0_20px_45px_-34px_rgba(15,23,42,0.4)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-orange-100 text-sm font-semibold text-slate-900">
+                {userInitial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold text-slate-900">{userLabel}</div>
+                <div className="truncate text-xs text-slate-500">{userEmail}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-slate-50/90 px-3 py-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Environment
+                </div>
+                <div className="mt-1 text-sm font-medium text-slate-700">v1.0 Production</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                aria-label="Logout"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-rose-200 hover:text-rose-600"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div className="lg:hidden">
+        <header className="border-b border-white/70 bg-white/80 px-5 py-4 shadow-[0_16px_35px_-28px_rgba(15,23,42,0.35)] backdrop-blur">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex-1">
-              <div className="text-sm font-medium text-slate-900">User</div>
-              <div className="text-xs text-slate-400">owner@example.com</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Inventory &amp; POS
+              </div>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">
+                {pageTitle}
+              </h2>
             </div>
             <button
               onClick={handleLogout}
               aria-label="Logout"
-              className="text-sm text-slate-600 hover:text-red-600 px-3 py-2 rounded-md"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-rose-200 hover:text-rose-600"
             >
               Logout
             </button>
           </div>
-          <p className="text-xs text-slate-400 text-center mt-3">v1.0 Production</p>
-        </div>
-      </aside>
+        </header>
+      </div>
 
-      <div className="flex-1 ml-72 min-h-screen">
-        {/* <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-sm border-b border-slate-100 py-3 px-6">
-          <div className="max-w-full mx-auto flex items-center gap-4">
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-slate-900">{pageTitle}</h2>
-              <p className="text-sm text-slate-500">Welcome back — manage your inventory efficiently.</p>
+      <div className="min-h-screen lg:ml-[22rem]">
+        <header className="sticky top-0 z-20 hidden px-6 pt-4 lg:block">
+          <div className="rounded-[24px] border border-white/80 bg-white/72 px-6 py-4 shadow-[0_20px_55px_-36px_rgba(15,23,42,0.35)] backdrop-blur">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-orange-100 text-slate-900">
+                {icons[activeItem.icon]}
+              </div>
+              <div className="flex-1">
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Inventory Workspace
+                </div>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                  {pageTitle}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Manage products, stock movement, and reporting from one place.
+                </p>
+              </div>
+              <div className="hidden items-center gap-3 xl:flex">
+                <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600">
+                  Live workspace
+                </div>
+                <div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white">
+                  {userEmail}
+                </div>
+              </div>
             </div>
-
-         
           </div>
-        </header> */}
+        </header>
 
-        <main className="p-2">{children}</main>
+        <main className="px-3 pb-3 pt-3 lg:px-6 lg:pb-6">
+          <div className="mx-auto max-w-full">
+            <div className="rounded-[28px] border border-white/70 bg-white/35 p-1 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.35)] backdrop-blur">
+              {children}
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

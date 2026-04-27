@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { realApi } from '@/lib/api';
 import { Product, InventoryItemWithProduct, Supplier } from '@/lib/api';
 
@@ -17,6 +17,115 @@ interface ReceiveTabProps {
   showMessage: (type: 'success' | 'error', text: string) => void;
 }
 
+function Dropdown<T extends { id: number; name: string }>({
+  items,
+  value,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  renderMeta,
+  avatarColor = 'bg-slate-100 text-slate-600',
+}: {
+  items: T[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder: string;
+  searchPlaceholder: string;
+  renderMeta?: (item: T) => React.ReactNode;
+  avatarColor?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected = items.find(i => i.id === Number(value));
+  const filtered = items.filter(i => i.name.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm outline-none transition hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 flex items-center justify-between gap-3"
+      >
+        {selected ? (
+          <span className="flex items-center gap-3 min-w-0">
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${avatarColor}`}>
+              {selected.name[0].toUpperCase()}
+            </span>
+            <span className="flex flex-col items-start min-w-0">
+              <span className="text-sm font-semibold text-slate-900 truncate">{selected.name}</span>
+              {renderMeta && <span className="text-xs text-slate-400">{renderMeta(selected)}</span>}
+            </span>
+          </span>
+        ) : (
+          <span className="text-slate-400">{placeholder}</span>
+        )}
+        <svg className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-20 w-full mt-2 rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.30)] overflow-hidden">
+          {/* Search */}
+          <div className="p-2 border-b border-slate-100 bg-slate-50/80">
+            <div className="relative">
+              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                placeholder={searchPlaceholder}
+                autoFocus
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-slate-400">No results found</p>
+            ) : filtered.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => { onChange(item.id.toString()); setOpen(false); setQuery(''); }}
+                className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-sky-50/60 ${item.id === Number(value) ? 'bg-sky-50' : ''}`}
+              >
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${avatarColor}`}>
+                  {item.name[0].toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900 truncate">{item.name}</div>
+                  {renderMeta && <div className="text-xs text-slate-400">{renderMeta(item)}</div>}
+                </div>
+                {item.id === Number(value) && (
+                  <svg className="w-4 h-4 text-sky-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ReceiveTab({ products, onSuccess, showMessage }: ReceiveTabProps) {
   const [form, setForm] = useState<ReceiveFormData>({ productId: '', quantity: '', supplierId: '', notes: '' });
   const [loading, setLoading] = useState(false);
@@ -24,16 +133,12 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
 
   useEffect(() => {
     realApi.getSuppliers()
-      .then((data) => {
-        setSuppliers(Array.isArray(data) ? data : []);
-      })
+      .then(data => setSuppliers(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!form.productId || !form.quantity || !form.supplierId) return;
-
     setLoading(true);
     try {
       const items = await realApi.receiveBatchInventory({
@@ -43,19 +148,13 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
         notes: form.notes || undefined,
       });
       showMessage('success', `Received ${items.length} items successfully`);
-      setForm({ productId: '', quantity: '', supplierId: '', notes: '' });
-      
       const product = products.find(p => p.id === Number(form.productId));
+      setForm({ productId: '', quantity: '', supplierId: '', notes: '' });
       if (product) {
-        const itemsWithProduct: InventoryItemWithProduct[] = items.map(item => ({
-          ...item,
-          product,
-        }));
-        onSuccess(itemsWithProduct);
+        onSuccess(items.map(item => ({ ...item, product })));
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to receive inventory';
-      showMessage('error', message);
+      showMessage('error', err instanceof Error ? err.message : 'Failed to receive inventory');
     } finally {
       setLoading(false);
     }
@@ -63,79 +162,131 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
 
   const selectedProduct = products.find(p => p.id === Number(form.productId));
   const selectedSupplier = suppliers.find(s => s.id === Number(form.supplierId));
+  const isReady = !!form.productId && !!form.quantity && !!form.supplierId && !loading;
 
   return (
-    <div className="card p-6">
-      <h2 className="text-lg font-semibold text-slate-900 mb-4">Receive Batch Inventory</h2>
-      <form onSubmit={handleSubmit} className="max-w-lg">
-        <div className="mb-4">
-          <label className="label">Supplier</label>
-          <select
-            value={form.supplierId}
-            onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
-            className="input"
-            required
-          >
-            <option value="">Select supplier</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+    <div className="min-h-[calc(100vh-8rem)] bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.10),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(249,115,22,0.08),transparent_30%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_50%,#fff7ed_100%)] p-6">
+      <div className="mx-auto max-w-2xl space-y-5">
+
+        {/* Header */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/75 px-4 py-2 text-sm text-slate-600 shadow-[0_10px_35px_-22px_rgba(15,23,42,0.4)] backdrop-blur">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+            </svg>
+          </span>
+          Receive Inventory
         </div>
 
-        <div className="mb-4">
-          <label className="label">Product</label>
-          <select
-            value={form.productId}
-            onChange={(e) => setForm({ ...form, productId: e.target.value })}
-            className="input"
-            required
-          >
-            <option value="">Select product</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-4">
-          <label className="label">Quantity</label>
-          <input
-            type="number"
-            min="1"
-            value={form.quantity}
-            onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-            className="input"
-            placeholder="Number of items received"
-            required
-          />
-        </div>
-        <div className="mb-6">
-          <label className="label">Notes (optional)</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="input min-h-[80px]"
-            placeholder="Batch details..."
-          />
-        </div>
-        {(selectedProduct && selectedSupplier) && (
-          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
-              Receiving <strong>{form.quantity || 0}</strong> units of <strong>{selectedProduct.name}</strong>
-              {selectedProduct.basePrice && ` at ${selectedProduct.basePrice} each`}
-              {' from '}
-              <strong>{selectedSupplier.name}</strong>
-            </p>
+        {/* Form card */}
+        <div className="rounded-[28px] border border-white/80 bg-white/88 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.30)] backdrop-blur">
+          <div className="mb-1.5 h-1 w-10 rounded-full bg-linear-to-r from-sky-500 to-orange-400" />
+          <div className="mb-6">
+            <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 mb-1">
+              Batch details
+            </div>
+            <p className="text-sm text-slate-500">Fill in the details to log a new inventory batch</p>
           </div>
-        )}
-        <button 
-          type="submit" 
-          className="btn btn-primary" 
-          disabled={!form.productId || !form.quantity || !form.supplierId || loading}
-        >
-          {loading ? 'Receiving...' : 'Receive Inventory'}
-        </button>
-      </form>
+
+          <form onSubmit={e => { e.preventDefault(); handleSubmit(); }} className="space-y-5">
+
+            {/* Supplier */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Supplier *</label>
+              <Dropdown
+                items={suppliers}
+                value={form.supplierId}
+                onChange={id => setForm({ ...form, supplierId: id })}
+                placeholder="Select a supplier..."
+                searchPlaceholder="Search suppliers..."
+                avatarColor="bg-orange-100 text-orange-700"
+              />
+            </div>
+
+            {/* Product */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Product *</label>
+              <Dropdown
+                items={products}
+                value={form.productId}
+                onChange={id => setForm({ ...form, productId: id })}
+                placeholder="Select a product..."
+                searchPlaceholder="Search products..."
+                avatarColor="bg-sky-100 text-sky-700"
+                renderMeta={(p: Product) => p.basePrice ? `$${p.basePrice} each` : undefined}
+              />
+            </div>
+
+            {/* Quantity */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Quantity *</label>
+              <div className="relative">
+                <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                </svg>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.quantity}
+                  onChange={e => setForm({ ...form, quantity: e.target.value })}
+                  placeholder="Number of items to receive"
+                  required
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Notes <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+                placeholder="Batch details, condition notes..."
+                rows={3}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 resize-none"
+              />
+            </div>
+
+            {/* Preview */}
+            {selectedProduct && selectedSupplier && form.quantity && (
+              <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-5 py-4">
+                <div className="mb-2 h-0.5 w-6 rounded-full bg-linear-to-r from-sky-500 to-orange-400" />
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sky-600 mb-2">Summary</p>
+                <p className="text-sm text-slate-700 leading-6">
+                  Receiving{' '}
+                  <span className="font-semibold text-slate-900">{form.quantity} unit{Number(form.quantity) !== 1 ? 's' : ''}</span>
+                  {' '}of{' '}
+                  <span className="font-semibold text-slate-900">{selectedProduct.name}</span>
+                  {selectedProduct.basePrice && (
+                    <> at <span className="font-semibold text-slate-900">${selectedProduct.basePrice}</span> each</>
+                  )}
+                  {' '}from{' '}
+                  <span className="font-semibold text-slate-900">{selectedSupplier.name}</span>.
+                </p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!isReady}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Receiving inventory...
+                </>
+              ) : 'Receive Inventory'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

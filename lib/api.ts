@@ -248,6 +248,15 @@ export interface Customer {
   updatedAt: string;
 }
 
+export interface Supplier {
+  id: number;
+  name: string;
+  phone: string;
+  contactEmail: string;
+  description?: string | null;
+  createdAt?: string;
+}
+
 export interface InventoryItemWithProduct extends InventoryItem {
   product: Product;
 }

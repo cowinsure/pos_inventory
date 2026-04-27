@@ -27,7 +27,7 @@ export default function InventoryListTab({ inventory, onRefresh }: InventoryList
   return (
     <div className="card p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Inventory Items</h2>
+        {/* <h2 className="text-lg font-semibold text-slate-900">Inventory Items</h2> */}
       
       </div>
 

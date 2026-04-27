@@ -7,6 +7,26 @@ class ApiError extends Error {
   }
 }
 
+async function requestText(endpoint: string): Promise<string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  let authHeader: string | undefined;
+  if (token) {
+    authHeader = token.startsWith('Bearer ') || token.startsWith('Token ') || token.startsWith('bearer ')
+      ? token
+      : `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      ...(authHeader && { Authorization: authHeader }),
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Request failed' }));
+    throw new ApiError(response.status, error.message || 'Request failed');
+  }
+  return response.text();
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -163,8 +183,10 @@ export const realApi = {
   getDailyStock: (date: string, productId: number) =>
     api.get<DailyStockResponse>('/inventory/daily-stock', { date, productId: productId.toString() }),
   
-  getBarcodeImage: (barcode: string) =>
-    api.get<BarcodeImageResponse>(`/inventory/barcode/${barcode}/image`),
+  getBarcodeImage: async (barcode: string): Promise<BarcodeImageResponse> => {
+    const svg = await requestText(`/inventory/barcode/${barcode}/image`);
+    return { svg };
+  },
   
   getBarcodeImages: (barcodes: string[]) =>
     api.get<BarcodeImagesResponse>('/inventory/barcode-images', { barcodes: barcodes.join(',') }),

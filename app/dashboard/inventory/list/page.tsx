@@ -14,7 +14,7 @@ export default function InventoryListPage() {
     setLoading(true);
     try {
       const invRes = await realApi.getInventory();
-      setInventory(invRes.data || invRes);
+      setInventory(invRes);
     } catch (err) {
       console.error(err);
     } finally {
@@ -28,16 +28,5 @@ export default function InventoryListPage() {
     }
   }, [token]);
 
-  return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Inventory List</h1>
-          <p className="page-subtitle">View all inventory items</p>
-        </div>
-      </div>
-
-      <InventoryListTab inventory={inventory} onRefresh={fetchInventory} />
-    </div>
-  );
+  return <InventoryListTab inventory={inventory} onRefresh={fetchInventory} />;
 }

@@ -42,11 +42,13 @@ export default function InventoryListTab({ inventory, onRefresh }: InventoryList
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const filteredInventory = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return inventory.filter((item) => {
       const matchesSearch =
-        searchQuery === '' ||
-        item.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+        q === '' ||
+        item.barcode.toLowerCase().includes(q) ||
+        item.product?.name?.toLowerCase().includes(q) ||
+        item.supplier?.name?.toLowerCase().includes(q);
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -117,7 +119,7 @@ export default function InventoryListTab({ inventory, onRefresh }: InventoryList
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search by barcode or product name..."
+                placeholder="Search by barcode, product or supplier..."
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
               />
             </div>
@@ -168,6 +170,7 @@ export default function InventoryListTab({ inventory, onRefresh }: InventoryList
                   <tr className="bg-slate-50/80">
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Barcode</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Product</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Supplier</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Acquired</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-100">Sold / Adjusted</th>
@@ -181,6 +184,7 @@ export default function InventoryListTab({ inventory, onRefresh }: InventoryList
                     >
                       <td className="px-6 py-4 font-mono text-xs text-slate-500">{item.barcode}</td>
                       <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.product?.name ?? '—'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{item.supplier?.name ?? <span className="text-slate-300">—</span>}</td>
                       <td className="px-6 py-4">
                         <StatusBadge status={item.status} />
                       </td>

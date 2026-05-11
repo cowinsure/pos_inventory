@@ -281,6 +281,8 @@ export interface Supplier {
 
 export interface InventoryItemWithProduct extends InventoryItem {
   product: Product;
+  supplier?: Supplier | null;
+  supplierId?: number | null;
 }
 
 export interface DailyStockResponse {

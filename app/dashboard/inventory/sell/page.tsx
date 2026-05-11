@@ -28,7 +28,7 @@ export default function InventorySellPage() {
       </div>
 
       {message && (
-        <div className={` p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+        <div className={` p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
           {message.text}
         </div>
       )}

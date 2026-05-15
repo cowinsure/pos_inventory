@@ -8,6 +8,7 @@ interface ReceiveFormData {
   productId: string;
   quantity: string;
   supplierId: string;
+  unitCost: string;
   notes: string;
 }
 
@@ -127,7 +128,7 @@ function Dropdown<T extends { id: number; name: string }>({
 }
 
 export default function ReceiveTab({ products, onSuccess, showMessage }: ReceiveTabProps) {
-  const [form, setForm] = useState<ReceiveFormData>({ productId: '', quantity: '', supplierId: '', notes: '' });
+  const [form, setForm] = useState<ReceiveFormData>({ productId: '', quantity: '', supplierId: '', unitCost: '', notes: '' });
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
@@ -145,11 +146,12 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
         productId: Number(form.productId),
         quantity: Number(form.quantity),
         supplierId: Number(form.supplierId),
+        unitCost: Number(form.unitCost),
         notes: form.notes || undefined,
       });
       showMessage('success', `Received ${items.length} items successfully`);
       const product = products.find(p => p.id === Number(form.productId));
-      setForm({ productId: '', quantity: '', supplierId: '', notes: '' });
+      setForm({ productId: '', quantity: '', supplierId: '', unitCost: '', notes: '' });
       if (product) {
         onSuccess(items.map(item => ({ ...item, product })));
       }
@@ -162,7 +164,7 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
 
   const selectedProduct = products.find(p => p.id === Number(form.productId));
   const selectedSupplier = suppliers.find(s => s.id === Number(form.supplierId));
-  const isReady = !!form.productId && !!form.quantity && !!form.supplierId && !loading;
+  const isReady = !!form.productId && !!form.quantity && !!form.supplierId && !!form.unitCost && !loading;
 
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.10),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(249,115,22,0.08),transparent_30%),linear-gradient(160deg,#f8fafc_0%,#eef6ff_50%,#fff7ed_100%)] dark:bg-none dark:bg-slate-950 p-6">
@@ -236,6 +238,26 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
               </div>
             </div>
 
+            {/* Unit Cost */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Unit Cost *
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500 pointer-events-none">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.unitCost}
+                  onChange={e => setForm({ ...form, unitCost: e.target.value })}
+                  placeholder="0.00"
+                  required
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
+                />
+              </div>
+            </div>
+
             {/* Notes */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -260,8 +282,8 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{form.quantity} unit{Number(form.quantity) !== 1 ? 's' : ''}</span>
                   {' '}of{' '}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedProduct.name}</span>
-                  {selectedProduct.basePrice && (
-                    <> at <span className="font-semibold text-slate-900 dark:text-slate-100">${selectedProduct.basePrice}</span> each</>
+                  {form.unitCost && (
+                    <> at <span className="font-semibold text-slate-900 dark:text-slate-100">${Number(form.unitCost).toFixed(2)}</span> each</>
                   )}
                   {' '}from{' '}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedSupplier.name}</span>.

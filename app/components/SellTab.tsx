@@ -40,6 +40,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [customerId, setCustomerId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '', address: '' });
@@ -129,13 +130,16 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
     if (scannedItems.length === 0 || !customerId) return;
     setLoading(true);
     try {
-      const itemsToSell = scannedItems.map(s => ({
-        barcode: s.item.barcode,
-        discountAmount: s.discountAmount || 0,
-        notes: s.notes || undefined,
+      const result = await realApi.sellBatchItems({
+        items: scannedItems.map(s => ({
+          barcode: s.item.barcode,
+          salePrice: s.item.product?.basePrice ? Number(s.item.product.basePrice) : 0,
+          discountAmount: s.discountAmount || 0,
+          notes: s.notes || undefined,
+        })),
+        paymentMethod,
         customerId: Number(customerId),
-      }));
-      const result = await realApi.sellBatchItems(itemsToSell);
+      });
       showMessage('success', `Successfully sold ${result.length} item(s)`);
       onSuccess(result as unknown as InventoryItemWithProduct[]);
       setScannedItems([]);
@@ -404,6 +408,27 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
               <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-3 mt-1">
                 <span className="text-base font-semibold text-slate-900 dark:text-slate-100">Total</span>
                 <span className="text-lg font-semibold text-slate-950 dark:text-white">${cartTotals.subtotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Payment method */}
+            <div className="mt-5">
+              <p className="mb-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Payment Method *</p>
+              <div className="grid grid-cols-3 gap-2">
+                {['CASH', 'CREDIT'].map(method => (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => setPaymentMethod(method)}
+                    className={`rounded-2xl border py-2.5 text-sm font-semibold transition ${
+                      paymentMethod === method
+                        ? 'border-slate-900 dark:border-white bg-slate-950 dark:bg-white text-white dark:text-slate-900'
+                        : 'border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
+                    }`}
+                  >
+                    {method}
+                  </button>
+                ))}
               </div>
             </div>
 

@@ -165,7 +165,7 @@ export const realApi = {
   getInventory: () =>
     api.get<InventoryItemWithProduct[]>('/inventory/items'),
   
-  receiveBatchInventory: (data: { productId: number; quantity: number; supplierId: number; notes?: string }) =>
+  receiveBatchInventory: (data: { productId: number; quantity: number; supplierId: number; unitCost: number; notes?: string }) =>
     api.post<InventoryItem[]>('/inventory/receive-batch', data),
   
   scanBarcode: (barcode: string) =>
@@ -174,8 +174,8 @@ export const realApi = {
   sellItem: (data: { barcode: string; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/sell', data),
   
-  sellBatchItems: (items: { barcode: string; discountAmount?: number; notes?: string; customerId?: number }[]) =>
-    api.patch<InventoryItem[]>('/inventory/sell', { items }),
+  sellBatchItems: (data: { items: { barcode: string; discountAmount?: number; notes?: string }[]; paymentMethod: string; customerId: number }) =>
+    api.patch<InventoryItem[]>('/inventory/sell', data),
   
   adjustItem: (data: { barcode: string; status: 'damaged' | 'returned'; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/adjust', data),
@@ -190,6 +190,16 @@ export const realApi = {
   
   getBarcodeImages: (barcodes: string[]) =>
     api.get<BarcodeImagesResponse>('/inventory/barcode-images', { barcodes: barcodes.join(',') }),
+
+  // Accounting methods
+  createSupplierPayment: (data: { supplierId: number; amount: number; description?: string }) =>
+    api.post<SupplierPayment>('/accounting/supplier-payments', data),
+
+  getSupplierLedger: (supplierId: number) =>
+    api.get<LedgerEntry[]>(`/accounting/ledger/suppliers/${supplierId}`),
+
+  getAllSupplierLedgers: () =>
+    api.get<SupplierLedgerSummary[]>('/accounting/ledger/suppliers/'),
 };
 
 export interface User {
@@ -346,4 +356,29 @@ export interface PaginatedResponse<T> {
 export interface SearchResponse<T> {
   data: T[];
   total: number;
+}
+
+export interface SupplierPayment {
+  id: number;
+  supplierId: number;
+  amount: number;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface LedgerEntry {
+  date: string;
+  reference: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface SupplierLedgerSummary {
+  supplierId: number;
+  supplierName: string;
+  balance: number;
+  totalCredit: number;
+  totalDebit: number;
 }

@@ -32,7 +32,7 @@ let products: Product[] = [
     name: 'Cotton T-Shirt',
     description: 'Comfortable cotton t-shirt',
     basePrice: 19.99,
-    attributes: { Size: 'M', Color: 'Blue' },
+    attributes: [{ Size: 'M', Color: 'Blue' }],
     categoryId: 1,
     active: true,
     createdAt: new Date().toISOString(),
@@ -89,7 +89,7 @@ const mockApi = {
     return Promise.resolve(JSON.parse(JSON.stringify(products)));
   },
   
-  createProduct: (data: { name: string; basePrice: number; categoryId: number; attributes: Record<string, string> }): Promise<Product> => {
+  createProduct: (data: { name: string; basePrice: number; categoryId: number; supplierId?: number; attributes: Record<string, string>[] }): Promise<Product> => {
     const newProduct: Product = {
       id: nextProductId++,
       name: data.name,
@@ -131,7 +131,7 @@ const mockApi = {
         name: 'Cotton T-Shirt',
         description: 'Comfortable cotton t-shirt',
         basePrice: 19.99,
-        attributes: { Size: 'M', Color: 'Blue' },
+        attributes: [{ Size: 'M', Color: 'Blue' }],
         categoryId: 1,
         active: true,
         createdAt: new Date().toISOString(),

@@ -132,7 +132,7 @@ export const realApi = {
   getProduct: (id: number) =>
     api.get<Product>(`/products/${id}`),
   
-  createProduct: (data: { name: string; description?: string; basePrice: number; categoryId: number; attributes: Record<string, string> }) =>
+  createProduct: (data: { name: string; description?: string; basePrice: number; categoryId: number; supplierId: number; attributes: Record<string, string>[] }) =>
     api.post<Product>('/products', data),
   
   updateProduct: (id: number, data: Partial<{ name: string; description: string; basePrice: number; categoryId: number; attributes: Record<string, string>; active: boolean }>) =>
@@ -223,7 +223,7 @@ export interface Product {
   name: string;
   description: string | null;
   basePrice: number;
-  attributes: Record<string, string>;
+  attributes: Record<string, string>[];
   categoryId: number;
   active: boolean;
   createdAt: string;
@@ -323,7 +323,7 @@ export interface Product {
   name: string;
   description: string | null;
   basePrice: number;
-  attributes: Record<string, string>;
+  attributes: Record<string, string>[];
   categoryId: number;
   active: boolean;
   createdAt: string;

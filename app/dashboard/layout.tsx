@@ -297,7 +297,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* ── Main content ── */}
       <div className="min-h-screen lg:ml-60">
         {/* Desktop sticky header */}
-        <header className="sticky top-0 z-20 hidden px-6 pt-4 lg:block">
+        <header className=" top-0 z-20 hidden px-6 pt-4 lg:block">
           <div className="rounded-[24px] border border-white/80 dark:border-slate-700/80 bg-white/72 dark:bg-slate-900/72 px-6 py-4 shadow-[0_20px_55px_-36px_rgba(15,23,42,0.35)] backdrop-blur">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-sky-100 to-orange-100 dark:from-sky-900/50 dark:to-orange-900/50 text-slate-900 dark:text-slate-100">
@@ -310,7 +310,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </div>
               <div className="hidden items-center gap-3 xl:flex">
                 <ThemeToggle theme={theme} onToggle={toggleTheme} />
-                <div className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">Live workspace</div>
+                {/* <div className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">Live workspace</div> */}
                 <div className="rounded-full bg-slate-950 dark:bg-slate-700 px-4 py-2 text-sm font-medium text-white">{userEmail}</div>
               </div>
             </div>

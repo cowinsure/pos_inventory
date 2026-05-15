@@ -4,13 +4,14 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { realApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { Category, Product, Attribute } from '@/lib/api';
+import { Category, Product, Attribute, Supplier } from '@/lib/api';
 
 export default function ProductsPage() {
   const { token, loading: authLoading } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [categoryAttributes, setCategoryAttributes] = useState<Attribute[]>([]);
@@ -19,7 +20,8 @@ export default function ProductsPage() {
     name: '',
     basePrice: '',
     categoryId: '',
-    attributes: {} as Record<string, string>,
+    supplierId: '',
+    attributes: [{}] as Record<string, string>[],
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -30,10 +32,17 @@ export default function ProductsPage() {
   const [catQuery, setCatQuery] = useState('');
   const catRef = useRef<HTMLDivElement>(null);
 
+  // Supplier dropdown
+  const [supOpen, setSupOpen] = useState(false);
+  const [supQuery, setSupQuery] = useState('');
+  const supRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (catRef.current && !catRef.current.contains(e.target as Node))
         setCatOpen(false);
+      if (supRef.current && !supRef.current.contains(e.target as Node))
+        setSupOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -50,8 +59,9 @@ export default function ProductsPage() {
     Promise.all([
       realApi.getCategories(),
       realApi.getProducts(),
+      realApi.getSuppliers(),
     ])
-      .then(([cats, prodsRes]) => {
+      .then(([cats, prodsRes, sups]) => {
         const prods = prodsRes.data || prodsRes;
         const normalizedProducts = Array.isArray(prods) ? prods.map(p => ({
           ...p,
@@ -59,6 +69,7 @@ export default function ProductsPage() {
         })) : [];
         setCategories(cats);
         setProducts(normalizedProducts);
+        setSuppliers(Array.isArray(sups) ? sups : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -81,6 +92,14 @@ export default function ProductsPage() {
     );
   }
 
+  const resetForm = () => ({
+    name: '',
+    basePrice: '',
+    categoryId: '',
+    supplierId: '',
+    attributes: [{}] as Record<string, string>[],
+  });
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -90,10 +109,11 @@ export default function ProductsPage() {
         name: formData.name,
         basePrice: Number(formData.basePrice),
         categoryId: Number(formData.categoryId),
-        attributes: { ...formData.attributes },
+        supplierId: Number(formData.supplierId),
+        attributes: formData.attributes,
       });
       setShowModal(false);
-      setFormData({ name: '', basePrice: '', categoryId: '', attributes: {} });
+      setFormData(resetForm());
       setCategoryAttributes([]);
       const prodsRes = await realApi.getProducts();
       const prods = prodsRes.data || prodsRes;
@@ -105,12 +125,23 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAttrChange = (name: string, value: string) => {
-    setFormData({ ...formData, attributes: { ...formData.attributes, [name]: value } });
+  const handleAttrChange = (rowIndex: number, name: string, value: string) => {
+    const newAttrs = formData.attributes.map((row, i) =>
+      i === rowIndex ? { ...row, [name]: value } : row
+    );
+    setFormData({ ...formData, attributes: newAttrs });
+  };
+
+  const addVariantRow = () => {
+    setFormData({ ...formData, attributes: [...formData.attributes, {}] });
+  };
+
+  const removeVariantRow = (rowIndex: number) => {
+    setFormData({ ...formData, attributes: formData.attributes.filter((_, i) => i !== rowIndex) });
   };
 
   const handleCategorySelect = async (categoryId: string) => {
-    setFormData({ ...formData, categoryId, attributes: {} });
+    setFormData({ ...formData, categoryId, attributes: [{}] });
     setCatOpen(false);
     setCatQuery('');
     if (categoryId) {
@@ -133,8 +164,12 @@ export default function ProductsPage() {
   );
   const activeCount = products.filter(p => p.active).length;
   const selectedCat = categories.find(c => c.id === Number(formData.categoryId));
+  const selectedSup = suppliers.find(s => s.id === Number(formData.supplierId));
   const filteredCats = categories.filter(c =>
     c.name.toLowerCase().includes(catQuery.toLowerCase())
+  );
+  const filteredSups = suppliers.filter(s =>
+    s.name.toLowerCase().includes(supQuery.toLowerCase())
   );
 
   return (
@@ -155,10 +190,12 @@ export default function ProductsPage() {
             onClick={() => {
               setShowModal(true);
               setFormError('');
-              setFormData({ name: '', basePrice: '', categoryId: '', attributes: {} });
+              setFormData(resetForm());
               setCategoryAttributes([]);
               setCatOpen(false);
               setCatQuery('');
+              setSupOpen(false);
+              setSupQuery('');
             }}
             className="flex items-center gap-2 rounded-2xl bg-slate-950 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-white"
           >
@@ -223,6 +260,7 @@ export default function ProductsPage() {
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filtered.map((product) => {
                 const cat = categories.find((c) => c.id === product.categoryId);
+                const firstVariant = Array.isArray(product.attributes) ? product.attributes[0] : product.attributes;
                 return (
                   <div key={product.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 dark:hover:bg-sky-900/10 transition-colors">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-sm font-bold text-emerald-700 dark:text-emerald-300">
@@ -234,11 +272,16 @@ export default function ProductsPage() {
                     </div>
                     <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">${product.basePrice.toFixed(2)}</p>
                     <div className="hidden md:flex shrink-0 flex-wrap gap-1 max-w-44">
-                      {Object.entries(product.attributes).slice(0, 3).map(([k, v]) => (
+                      {firstVariant && Object.entries(firstVariant).slice(0, 3).map(([k, v]) => (
                         <span key={k} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
                           {k}: {v}
                         </span>
                       ))}
+                      {Array.isArray(product.attributes) && product.attributes.length > 1 && (
+                        <span className="rounded-full bg-sky-100 dark:bg-sky-900/30 px-2 py-0.5 text-xs text-sky-600 dark:text-sky-300">
+                          +{product.attributes.length - 1} variant{product.attributes.length > 2 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${product.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                       {product.active ? 'Active' : 'Inactive'}
@@ -252,12 +295,12 @@ export default function ProductsPage() {
       </div>
 
       {/* Product modal
-          Outer div has NO overflow so the category dropdown panel can freely overflow the modal bounds.
+          Outer div has NO overflow so the category/supplier dropdowns can freely overflow the modal bounds.
           Only the attributes section has its own bounded scroll. */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowModal(false)}>
           <div
-            className="w-full max-w-lg rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur"
+            className="w-full max-w-lg rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="mb-1.5 h-1 w-10 rounded-full bg-linear-to-r from-sky-500 to-orange-400" />
@@ -373,7 +416,82 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Attributes — own bounded scroll so modal stays compact */}
+              {/* Supplier — searchable dropdown */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Supplier *</label>
+                <div className="relative" ref={supRef}>
+                  <button
+                    type="button"
+                    onClick={() => setSupOpen(o => !o)}
+                    className="w-full flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 px-4 py-3 text-sm outline-none transition hover:border-slate-300 dark:hover:border-slate-500 focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
+                  >
+                    {selectedSup ? (
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/40 text-xs font-bold text-orange-700 dark:text-orange-300">
+                          {selectedSup.name[0].toUpperCase()}
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{selectedSup.name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 dark:text-slate-500">Select a supplier...</span>
+                    )}
+                    <svg className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${supOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {supOpen && (
+                    <div className="absolute z-20 w-full mt-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.30)] overflow-hidden">
+                      <div className="p-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
+                        <div className="relative">
+                          <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <input
+                            type="text"
+                            value={supQuery}
+                            onChange={e => setSupQuery(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            placeholder="Search suppliers..."
+                            autoFocus
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700/50 pl-9 pr-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-sky-400 dark:focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-900/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-52 overflow-y-auto">
+                        {filteredSups.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-slate-400">No suppliers found</p>
+                        ) : filteredSups.map(s => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, supplierId: s.id.toString() });
+                              setSupOpen(false);
+                              setSupQuery('');
+                            }}
+                            className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-700/60 ${formData.supplierId === s.id.toString() ? 'bg-orange-50 dark:bg-slate-700/80' : ''}`}
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40 text-xs font-bold text-orange-700 dark:text-orange-300">
+                              {s.name[0].toUpperCase()}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{s.name}</div>
+                            </div>
+                            {formData.supplierId === s.id.toString() && (
+                              <svg className="w-4 h-4 text-orange-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Attributes — variant rows */}
               {(attrLoading || categoryAttributes.length > 0) && (
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-700/30 p-4">
                   {attrLoading ? (
@@ -386,34 +504,64 @@ export default function ProductsPage() {
                     </div>
                   ) : (
                     <>
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Product Attributes</p>
-                      <div className="max-h-52 overflow-y-auto space-y-4 pr-1">
-                        {categoryAttributes.map((attr) => (
-                          <div key={attr.id}>
-                            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                              {attr.name} {attr.required && <span className="text-rose-500">*</span>}
-                            </label>
-                            {attr.type === 'select' ? (
-                              <select
-                                value={formData.attributes[attr.name] || ''}
-                                onChange={(e) => handleAttrChange(attr.name, e.target.value)}
-                                required={attr.required}
-                                className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
-                              >
-                                <option value="">Select</option>
-                                {attr.options.map((opt) => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type={attr.type}
-                                value={formData.attributes[attr.name] || ''}
-                                onChange={(e) => handleAttrChange(attr.name, e.target.value)}
-                                required={attr.required}
-                                className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
-                              />
-                            )}
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Variants</p>
+                        <button
+                          type="button"
+                          onClick={addVariantRow}
+                          className="flex items-center gap-1 rounded-xl bg-sky-50 dark:bg-sky-900/30 px-3 py-1 text-xs font-semibold text-sky-600 dark:text-sky-300 transition hover:bg-sky-100 dark:hover:bg-sky-900/50"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Variant
+                        </button>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto space-y-4 pr-1">
+                        {formData.attributes.map((row, rowIndex) => (
+                          <div key={rowIndex} className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700/40 p-3 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-slate-400 dark:text-slate-500">Variant {rowIndex + 1}</span>
+                              {formData.attributes.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariantRow(rowIndex)}
+                                  className="rounded-lg p-1 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                            {categoryAttributes.map((attr) => (
+                              <div key={attr.id}>
+                                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                                  {attr.name} {attr.required && <span className="text-rose-500">*</span>}
+                                </label>
+                                {attr.type === 'select' ? (
+                                  <select
+                                    value={row[attr.name] || ''}
+                                    onChange={(e) => handleAttrChange(rowIndex, attr.name, e.target.value)}
+                                    required={attr.required && rowIndex === 0}
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-900/50"
+                                  >
+                                    <option value="">Select</option>
+                                    {attr.options.map((opt) => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={attr.type}
+                                    value={row[attr.name] || ''}
+                                    onChange={(e) => handleAttrChange(rowIndex, attr.name, e.target.value)}
+                                    required={attr.required && rowIndex === 0}
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-900/50"
+                                  />
+                                )}
+                              </div>
+                            ))}
                           </div>
                         ))}
                       </div>

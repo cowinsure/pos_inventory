@@ -200,6 +200,20 @@ export const realApi = {
 
   getAllSupplierLedgers: () =>
     api.get<SupplierLedgerSummary[]>('/accounting/ledger/suppliers/'),
+
+  // Sales history methods
+  getSales: (params?: { page?: number; limit?: number }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
+    return api.get<SalesListResponse>(`/sales${query}`);
+  },
+
+  getSale: (id: number) =>
+    api.get<SaleRecord>(`/sales/${id}`),
+
+  getSalesByCustomer: (customerId: number, params?: { page?: number; limit?: number }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
+    return api.get<SalesListResponse>(`/sales/customers/${customerId}${query}`);
+  },
 };
 
 export interface User {
@@ -233,6 +247,7 @@ export interface Product {
   name: string;
   description: string | null;
   basePrice: number;
+  sku?: string | null;
   attributes: Record<string, string>[];
   categoryId: number;
   active: boolean;
@@ -333,6 +348,7 @@ export interface Product {
   name: string;
   description: string | null;
   basePrice: number;
+  sku?: string | null;
   attributes: Record<string, string>[];
   categoryId: number;
   active: boolean;
@@ -381,4 +397,57 @@ export interface SupplierLedgerSummary {
   balance: number;
   totalCredit: number;
   totalDebit: number;
+}
+
+export interface SaleLine {
+  id: number;
+  tenantId: number;
+  salesRecordId: number;
+  inventoryItemId: number;
+  productId: number;
+  product: Product;
+  barcode: string;
+  salePrice: string;
+  discountAmount: string;
+  netAmount: string;
+  acquisitionCost: string;
+}
+
+export interface JournalEntry {
+  id: number;
+  tenantId?: number;
+  date: string;
+  reference: string;
+  description: string;
+  eventType: string;
+  createdAt: string;
+}
+
+export interface SaleRecord {
+  id: number;
+  tenantId: number;
+  saleNumber: string;
+  customerId: number | null;
+  customer: Customer | null;
+  paymentMethod: string;
+  grossAmount: string;
+  discountAmount: string;
+  netAmount: string;
+  totalCost: string;
+  status: string;
+  soldAt: string;
+  journalEntryId: number | null;
+  journalEntry?: JournalEntry | null;
+  lines: SaleLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SalesListResponse {
+  items: SaleRecord[];
+  page: number;
+  limit: number;
+  total: number;
+  pageCount: number;
+  hasNext: boolean;
 }

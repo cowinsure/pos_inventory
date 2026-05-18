@@ -4,7 +4,11 @@
       "Bash(npx tsc *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(ls -la \"d:\\\\\\\\neural script\\\\\\\\inventory_mgm/components/ui\")",
+      "Bash(find \"d:\\\\\\\\neural script\\\\\\\\inventory_mgm/app/components\" -type f)",
+      "Bash(ls -la \"d:\\\\\\\\neural script\\\\\\\\inventory_mgm/app/dashboard/finance\")",
+      "Bash(find \"d:\\\\\\\\neural script\\\\\\\\inventory_mgm/app\" -name \"page.tsx\" -type f)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { realApi, Supplier, LedgerEntry, SupplierLedgerSummary } from '@/lib/api';
+import { realApi, Supplier, LedgerEntry, SupplierLedgerSummary, Expense, ExpenseSummary } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 const EMPTY_MODAL = { supplierId: '', amount: '', description: '' };
@@ -21,7 +21,7 @@ export default function FinancePage() {
   const selectorRef = useRef<HTMLDivElement>(null);
 
   // tabs
-  const [activeTab, setActiveTab] = useState<'all' | 'supplier'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'supplier' | 'expenses'>('all');
 
   // all-suppliers ledger
   const [allLedgers, setAllLedgers] = useState<SupplierLedgerSummary[] | null>(null);
@@ -43,6 +43,25 @@ export default function FinancePage() {
   const modalSupRef = useRef<HTMLDivElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // expenses tab
+  const [expenses, setExpenses] = useState<Expense[] | null>(null);
+  const [loadingExpenses, setLoadingExpenses] = useState(false);
+  const [expenseError, setExpenseError] = useState('');
+  const [expenseFilter, setExpenseFilter] = useState('');
+
+  // expense summary
+  const [expenseSummary, setExpenseSummary] = useState<ExpenseSummary | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
+  const [summaryFrom, setSummaryFrom] = useState('');
+  const [summaryTo, setSummaryTo] = useState('');
+
+  // expense modal
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({ amount: '', description: '' });
+  const [submittingExpense, setSubmittingExpense] = useState(false);
+  const [expenseFormError, setExpenseFormError] = useState('');
 
   useEffect(() => {
     if (!authLoading && !token) router.replace('/login');
@@ -86,6 +105,7 @@ export default function FinancePage() {
 
   useEffect(() => {
     if (token && activeTab === 'all') fetchAllLedgers();
+    if (token && activeTab === 'expenses') fetchExpenses();
   }, [token, activeTab]);
 
   const fetchLedger = (supplierId: number) => {
@@ -169,30 +189,92 @@ export default function FinancePage() {
     }
   };
 
+  const fetchExpenses = () => {
+    setLoadingExpenses(true);
+    setExpenseError('');
+    realApi.getExpenses()
+      .then(data => setExpenses(Array.isArray(data) ? data : []))
+      .catch(err => setExpenseError(err instanceof Error ? err.message : 'Failed to load expenses'))
+      .finally(() => setLoadingExpenses(false));
+  };
+
+  const fetchExpenseSummary = () => {
+    if (!summaryFrom || !summaryTo) return;
+    setLoadingSummary(true);
+    setSummaryError('');
+    setExpenseSummary(null);
+    realApi.getExpenseSummary({ from: summaryFrom, to: summaryTo })
+      .then(data => setExpenseSummary(data))
+      .catch(err => setSummaryError(err instanceof Error ? err.message : 'Failed to load summary'))
+      .finally(() => setLoadingSummary(false));
+  };
+
+  const openExpenseModal = () => {
+    setExpenseForm({ amount: '', description: '' });
+    setExpenseFormError('');
+    setShowExpenseModal(true);
+  };
+
+  const closeExpenseModal = () => {
+    setShowExpenseModal(false);
+    setExpenseForm({ amount: '', description: '' });
+    setExpenseFormError('');
+  };
+
+  const handleExpenseSubmit = async () => {
+    setSubmittingExpense(true);
+    setExpenseFormError('');
+    try {
+      await realApi.createExpense({
+        amount: Number(expenseForm.amount),
+        description: expenseForm.description || undefined,
+      });
+      closeExpenseModal();
+      fetchExpenses();
+    } catch (err) {
+      setExpenseFormError(err instanceof Error ? err.message : 'Failed to record expense');
+    } finally {
+      setSubmittingExpense(false);
+    }
+  };
+
   return (
     <div className="rounded-3xl bg-white/60 dark:bg-slate-900/60 p-6 lg:p-8 space-y-6">
 
       {/* ── Page header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Supplier Payments</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">View supplier ledgers and record payments.</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Finance</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage supplier payments and record business expenses.</p>
         </div>
-        <button
-          type="button"
-          onClick={openModal}
-          className="shrink-0 flex items-center gap-2 rounded-xl bg-slate-950 dark:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Record Payment
-        </button>
+        {activeTab === 'expenses' ? (
+          <button
+            type="button"
+            onClick={openExpenseModal}
+            className="shrink-0 flex items-center gap-2 rounded-xl bg-slate-950 dark:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Record Expense
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={openModal}
+            className="shrink-0 flex items-center gap-2 rounded-xl bg-slate-950 dark:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Record Payment
+          </button>
+        )}
       </div>
 
       {/* ── Tab bar ── */}
       <div className="flex gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/60 dark:bg-slate-800/60 p-1 w-fit">
-        {(['all', 'supplier'] as const).map(tab => (
+        {(['all', 'supplier', 'expenses'] as const).map(tab => (
           <button
             key={tab}
             type="button"
@@ -203,7 +285,7 @@ export default function FinancePage() {
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            {tab === 'all' ? 'All Suppliers' : 'By Supplier'}
+            {tab === 'all' ? 'All Suppliers' : tab === 'supplier' ? 'By Supplier' : 'Expenses'}
           </button>
         ))}
       </div>
@@ -290,7 +372,7 @@ export default function FinancePage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/60 text-left">
-                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Supplier</th>
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">Supplier</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Total Debit</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Total Credit</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Balance</th>
@@ -506,9 +588,9 @@ export default function FinancePage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-amber-50/60 dark:bg-amber-900/10 text-left">
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500">Date</th>
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500">Reference</th>
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500">Description</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500 whitespace-nowrap">Date</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500 whitespace-nowrap">Reference</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500 whitespace-nowrap">Description</th>
                                 <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500 text-right">Amount Due</th>
                                 <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500 text-right">Running Balance</th>
                               </tr>
@@ -547,9 +629,9 @@ export default function FinancePage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-emerald-50/60 dark:bg-emerald-900/10 text-left">
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500">Date</th>
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500">Reference</th>
-                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500">Description</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 whitespace-nowrap">Date</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 whitespace-nowrap">Reference</th>
+                                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 whitespace-nowrap">Description</th>
                                 <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 text-right">Amount Paid</th>
                                 <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 text-right">Running Balance</th>
                               </tr>
@@ -580,6 +662,159 @@ export default function FinancePage() {
             )}
           </div>
         </>
+      )}
+
+      {/* ── Expenses tab ── */}
+      {activeTab === 'expenses' && (
+        <div className="space-y-6">
+
+          {/* Summary with date range */}
+          <div className="rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-white/80 dark:bg-slate-800/60 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Expense Summary</h2>
+              <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">Select a date range to view totals.</p>
+            </div>
+            <div className="px-5 py-4">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">From</label>
+                  <input
+                    type="date"
+                    value={summaryFrom}
+                    onChange={e => setSummaryFrom(e.target.value)}
+                    className="rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-400 transition"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">To</label>
+                  <input
+                    type="date"
+                    value={summaryTo}
+                    onChange={e => setSummaryTo(e.target.value)}
+                    className="rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-400 transition"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={!summaryFrom || !summaryTo || loadingSummary}
+                  onClick={fetchExpenseSummary}
+                  className="rounded-xl bg-slate-950 dark:bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {loadingSummary ? 'Loading...' : 'Apply'}
+                </button>
+              </div>
+
+              {summaryError && (
+                <p className="mt-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400">{summaryError}</p>
+              )}
+
+              {expenseSummary && !loadingSummary && (
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-rose-100 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-900/10 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-rose-400 dark:text-rose-500">Total Expenses</p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums text-rose-700 dark:text-rose-400">
+                      ${Number(expenseSummary.totalAmount ?? 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800/60 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">No. of Entries</p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums text-slate-800 dark:text-slate-200">
+                      {expenseSummary.count ?? 0}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* All expenses list */}
+          <div className="rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-white/80 dark:bg-slate-800/60 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">All Expenses</h2>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={fetchExpenses}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 transition hover:border-emerald-400 dark:hover:border-emerald-500"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M5.5 9A8 8 0 0119 12m-.5 3A8 8 0 015 12" />
+                  </svg>
+                  Refresh
+                </button>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={expenseFilter}
+                    onChange={e => setExpenseFilter(e.target.value)}
+                    placeholder="Filter by description..."
+                    className="w-56 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {loadingExpenses && (
+              <div className="flex items-center justify-center py-20">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+              </div>
+            )}
+
+            {expenseError && (
+              <div className="px-5 py-4">
+                <p className="rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-600 dark:text-rose-400">{expenseError}</p>
+              </div>
+            )}
+
+            {expenses && !loadingExpenses && (() => {
+              const filtered = expenses.filter(e =>
+                (e.description ?? '').toLowerCase().includes(expenseFilter.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-16">
+                  {expenseFilter ? 'No expenses match your filter.' : 'No expenses recorded yet.'}
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/60 text-left">
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">#</th>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">Date</th>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">Reference</th>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">Description</th>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right whitespace-nowrap">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                      {filtered.map((expense, i) => (
+                        <tr key={expense.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
+                          <td className="px-5 py-3.5 text-slate-400 dark:text-slate-500 text-xs font-mono">{i + 1}</td>
+                          <td className="px-5 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                            {new Date(expense.date).toLocaleDateString()}
+                          </td>
+                          <td className="px-5 py-3.5 whitespace-nowrap text-xs font-mono text-slate-500 dark:text-slate-400">
+                            {expense.reference}
+                          </td>
+                          <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300">
+                            {expense.description ?? <span className="italic text-slate-300 dark:text-slate-600">No description</span>}
+                          </td>
+                          <td className="px-5 py-3.5 text-right tabular-nums whitespace-nowrap font-semibold text-rose-700 dark:text-rose-400">
+                            ${Number(expense.amount).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </div>
+
+        </div>
       )}
 
       {/* ── Modal ── */}
@@ -722,6 +957,82 @@ export default function FinancePage() {
                 {submitting ? 'Recording...' : 'Record Payment'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Expense Modal ── */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={closeExpenseModal} />
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-[0_32px_80px_-24px_rgba(15,23,42,0.5)] p-7 space-y-5">
+
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Record Expense</h2>
+              <button
+                type="button"
+                onClick={closeExpenseModal}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 transition hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Amount <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 overflow-hidden focus-within:border-emerald-500 transition">
+                <span className="px-3 text-sm font-semibold text-slate-400 dark:text-slate-500 select-none">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={expenseForm.amount}
+                  onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))}
+                  placeholder="0.00"
+                  className="flex-1 bg-transparent py-2.5 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Description <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={expenseForm.description}
+                onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="e.g. Office supplies, Rent, Utilities..."
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition resize-none"
+              />
+            </div>
+
+            {expenseFormError && (
+              <p className="rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400">{expenseFormError}</p>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={closeExpenseModal}
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={Number(expenseForm.amount) <= 0 || submittingExpense}
+                onClick={handleExpenseSubmit}
+                className="flex-1 rounded-xl bg-slate-950 dark:bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submittingExpense ? 'Recording...' : 'Record Expense'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}

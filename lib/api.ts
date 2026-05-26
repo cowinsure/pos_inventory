@@ -201,6 +201,16 @@ export const realApi = {
   getAllSupplierLedgers: () =>
     api.get<SupplierLedgerSummary[]>('/accounting/ledger/suppliers/'),
 
+  // Expense methods
+  getExpenses: () =>
+    api.get<Expense[]>('/accounting/expenses'),
+
+  getExpenseSummary: (params: { from: string; to: string }) =>
+    api.get<ExpenseSummary>('/accounting/expenses/summary', params as Record<string, string>),
+
+  createExpense: (data: { amount: number; description?: string; accountId?: number }) =>
+    api.post<Expense>('/accounting/expenses', data),
+
   // Sales history methods
   getSales: (params?: { page?: number; limit?: number }) => {
     const query = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
@@ -450,4 +460,18 @@ export interface SalesListResponse {
   total: number;
   pageCount: number;
   hasNext: boolean;
+}
+
+export interface Expense {
+  id: number;
+  date: string;
+  reference: string;
+  amount: number;
+  description: string | null;
+  accountId: number | null;
+}
+
+export interface ExpenseSummary {
+  totalAmount: number;
+  count: number;
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { InventoryItemWithProduct } from '@/lib/api';
 import AdjustTab from '@/app/components/AdjustTab';
 
 export default function InventoryAdjustPage() {
@@ -9,29 +8,21 @@ export default function InventoryAdjustPage() {
 
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
-  }, []);
-
-  const handleSuccess = useCallback((updatedItem: InventoryItemWithProduct) => {
-    setMessage({ type: 'success', text: `Item adjusted successfully` });
+    setTimeout(() => setMessage(null), 3500);
   }, []);
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Adjust Inventory</h1>
-          <p className="page-subtitle">Adjust item status (damaged/returned)</p>
-        </div>
-      </div>
-
       {message && (
-        <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+        <div className={`mx-6 mt-4 rounded-2xl px-5 py-3.5 text-sm font-medium ${
+          message.type === 'success'
+            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50'
+            : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50'
+        }`}>
           {message.text}
         </div>
       )}
-
-      <AdjustTab onSuccess={handleSuccess} showMessage={showMessage} />
+      <AdjustTab onSuccess={() => {}} showMessage={showMessage} />
     </div>
   );
 }

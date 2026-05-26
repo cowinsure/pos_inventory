@@ -162,8 +162,13 @@ export const realApi = {
     api.post<Customer>('/customers', data),
 
   // Inventory methods
-  getInventory: () =>
-    api.get<InventoryItemWithProduct[]>('/inventory/items'),
+  getInventory: (params?: { page?: number; limit?: number; lotNumber?: string }) => {
+    const q: Record<string, string> = {};
+    if (params?.page != null) q.page = String(params.page);
+    if (params?.limit != null) q.limit = String(params.limit);
+    if (params?.lotNumber) q.lotNumber = params.lotNumber;
+    return api.get<InventoryPaginatedResponse>('/inventory/items', Object.keys(q).length ? q : undefined);
+  },
   
   receiveBatchInventory: (data: { productId: number; quantity: number; supplierId: number; unitCost: number; notes?: string }) =>
     api.post<InventoryItem[]>('/inventory/receive-batch', data),
@@ -179,6 +184,13 @@ export const realApi = {
   
   adjustItem: (data: { barcode: string; status: 'damaged' | 'returned'; notes?: string }) =>
     api.patch<InventoryItem>('/inventory/adjust', data),
+
+  createReturn: (data: {
+    type: 'supplier_return';
+    lotNumber?: string;
+    items?: { barcode: string; notes?: string }[];
+    notes?: string;
+  }) => api.post<unknown>('/inventory/returns', data),
   
   getDailyStock: (date: string, productId: number) =>
     api.get<DailyStockResponse>('/inventory/daily-stock', { date, productId: productId.toString() }),
@@ -286,13 +298,29 @@ export interface InventoryItem {
   id: number;
   tenantId: number;
   productId: number;
+  supplierId: number | null;
   barcode: string;
+  lotId: number | null;
+  lotNumber: string | null;
   status: 'in_stock' | 'sold' | 'damaged' | 'returned';
   acquiredDate: string;
   soldDate: string | null;
   adjustedDate: string | null;
   notes: string | null;
+  adjustmentReason: string | null;
+  discountAmount: string;
+  acquisitionCost: string | null;
+  salePrice: string | null;
   updatedAt: string;
+}
+
+export interface InventoryPaginatedResponse {
+  page: string;
+  limit: string;
+  total: number;
+  pageCount: number;
+  hasNext: boolean;
+  items: InventoryItemWithProduct[];
 }
 
 export interface Customer {
@@ -317,7 +345,6 @@ export interface Supplier {
 export interface InventoryItemWithProduct extends InventoryItem {
   product: Product;
   supplier?: Supplier | null;
-  supplierId?: number | null;
 }
 
 export interface DailyStockResponse {

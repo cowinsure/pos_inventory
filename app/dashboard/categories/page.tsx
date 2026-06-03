@@ -15,7 +15,8 @@ interface CategoryFormData {
 interface AttrFormData {
   name: string;
   type: string;
-  options: string;
+  unit: string;
+  options: string[];
   required: boolean;
 }
 
@@ -29,7 +30,10 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '', description: '', parentId: '' });
-  const [attrData, setAttrData] = useState<AttrFormData>({ name: '', type: 'select', options: '', required: true });
+  const [attrData, setAttrData] = useState<AttrFormData>({ name: '', type: 'SELECT', unit: '', options: [], required: true });
+  const [editingAttr, setEditingAttr] = useState<{ attr: { id: number; name: string; type: string; unit: string | null; options: string[]; required: boolean }; categoryId: number } | null>(null);
+  const [optionInput, setOptionInput] = useState('');
+  const optionInputRef = useRef<HTMLInputElement>(null);
   const [formError, setFormError] = useState('');
   const [attrError, setAttrError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -146,23 +150,86 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleCreateAttribute = async (e: React.FormEvent) => {
+  const openCreateAttrModal = (cat: Category) => {
+    setSelectedCategory(cat);
+    setEditingAttr(null);
+    setAttrData({ name: '', type: 'SELECT', unit: '', options: [], required: true });
+    setOptionInput('');
+    setAttrError('');
+    setShowAttrModal(true);
+  };
+
+  const openEditAttrModal = (cat: Category, attr: { id: number; name: string; type: string; unit: string | null; options: string[]; required: boolean }) => {
+    setSelectedCategory(cat);
+    setEditingAttr({ attr, categoryId: cat.id });
+    setAttrData({
+      name: attr.name,
+      type: attr.type,
+      unit: attr.unit ?? '',
+      options: attr.options,
+      required: attr.required,
+    });
+    setOptionInput('');
+    setAttrError('');
+    setShowAttrModal(true);
+  };
+
+  const addOption = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed && !attrData.options.includes(trimmed)) {
+      setAttrData(prev => ({ ...prev, options: [...prev.options, trimmed] }));
+    }
+    setOptionInput('');
+    setTimeout(() => optionInputRef.current?.focus(), 0);
+  };
+
+  const handleOptionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addOption(optionInput);
+    } else if (e.key === 'Backspace' && optionInput === '' && attrData.options.length > 0) {
+      setAttrData(prev => ({ ...prev, options: prev.options.slice(0, -1) }));
+    }
+  };
+
+  const handleOptionPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (text.includes(',')) {
+      e.preventDefault();
+      const parts = text.split(',').map(s => s.trim()).filter(Boolean);
+      setAttrData(prev => ({ ...prev, options: [...prev.options, ...parts.filter(p => !prev.options.includes(p))] }));
+      setOptionInput('');
+    }
+  };
+
+  const handleSubmitAttribute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCategory) return;
     setAttrError('');
     setSubmitting(true);
+    const finalOptions = optionInput.trim()
+      ? [...attrData.options, optionInput.trim()].filter((v, i, a) => a.indexOf(v) === i)
+      : attrData.options;
     try {
-      await realApi.createAttribute(selectedCategory.id, {
+      const payload = {
         name: attrData.name,
         type: attrData.type,
-        options: attrData.options.split(',').map((s) => s.trim()),
+        unit: attrData.unit || undefined,
+        options: finalOptions,
         required: attrData.required,
-      });
+      };
+      if (editingAttr) {
+        await realApi.updateAttribute(editingAttr.categoryId, editingAttr.attr.id, payload);
+      } else {
+        await realApi.createAttribute(selectedCategory.id, payload);
+      }
       setShowAttrModal(false);
-      setAttrData({ name: '', type: 'select', options: '', required: true });
+      setEditingAttr(null);
+      setAttrData({ name: '', type: 'SELECT', unit: '', options: [], required: true });
+      setOptionInput('');
       loadCategories();
     } catch (err) {
-      setAttrError(err instanceof Error ? err.message : 'Failed to create attribute');
+      setAttrError(err instanceof Error ? err.message : editingAttr ? 'Failed to update attribute' : 'Failed to create attribute');
     } finally {
       setSubmitting(false);
     }
@@ -232,12 +299,7 @@ export default function CategoriesPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setAttrError('');
-                        setAttrData({ name: '', type: 'select', options: '', required: true });
-                        setShowAttrModal(true);
-                      }}
+                      onClick={() => openCreateAttrModal(cat)}
                       className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,15 +311,52 @@ export default function CategoriesPage() {
                 </div>
 
                 {cat.attributes?.length > 0 ? (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {cat.attributes.map((attr) => (
-                      <span key={attr.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                        {attr.name}
-                        {attr.options.length > 0 && (
-                          <span className="text-slate-400 dark:text-slate-500">({attr.options.join(', ')})</span>
-                        )}
+                  <div className="mt-5">
+                    <div className="flex items-center gap-2 mb-2 pl-1">
+                      <div className="w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                        Attributes · {cat.attributes.length}
                       </span>
-                    ))}
+                    </div>
+                    <div className="space-y-1">
+                      {cat.attributes.map((attr, i) => {
+                        const isLast = i === cat.attributes.length - 1;
+                        const typeColor: Record<string, string> = {
+                          SELECT: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300',
+                          TEXT: 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300',
+                          NUMBER: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300',
+                          BOOLEAN: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
+                        };
+                        return (
+                          <div key={attr.id} className="relative flex items-center pl-9">
+                            <div className={`absolute left-4 w-px bg-slate-200 dark:bg-slate-700 ${isLast ? 'top-0 h-1/2' : 'top-0 bottom-0'}`} />
+                            <div className="absolute left-4 top-1/2 w-4 h-px bg-slate-200 dark:bg-slate-700 -translate-y-px" />
+                            <div className="absolute left-7 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600" />
+                            <div className="flex-1 flex items-center justify-between gap-2 rounded-xl bg-slate-50/80 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/50 px-3 py-1.5 group hover:border-slate-200 dark:hover:border-slate-600 transition-colors">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{attr.name}</span>
+                                {attr.required && <span className="text-rose-400 text-[11px] leading-none shrink-0">*</span>}
+                                <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-md font-semibold uppercase tracking-wide ${typeColor[attr.type] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{attr.type}</span>
+                                {attr.unit && <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">{attr.unit}</span>}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {attr.options.length > 0 && (
+                                  <span className="hidden sm:block text-[10px] text-slate-400 dark:text-slate-500 max-w-22.5 truncate">{attr.options.join(' · ')}</span>
+                                )}
+                                <button
+                                  onClick={() => openEditAttrModal(cat, attr)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center h-5 w-5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <p className="mt-4 text-xs text-slate-400">No attributes yet</p>
@@ -431,15 +530,15 @@ export default function CategoriesPage() {
 
       {/* Attribute modal */}
       {showAttrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowAttrModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => { setShowAttrModal(false); setEditingAttr(null); }}>
           <div className="w-full max-w-md rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur" onClick={e => e.stopPropagation()}>
             <div className="mb-1.5 h-1 w-10 rounded-full bg-linear-to-r from-orange-400 to-sky-500" />
             <div className="mb-6">
               <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 mb-1">
-                New Attribute
+                {editingAttr ? 'Edit Attribute' : 'New Attribute'}
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Add attribute to <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedCategory?.name}</span>
+                {editingAttr ? 'Update attribute in ' : 'Add attribute to '}<span className="font-semibold text-slate-700 dark:text-slate-200">{selectedCategory?.name}</span>
               </p>
             </div>
 
@@ -447,7 +546,7 @@ export default function CategoriesPage() {
               <div className="mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-700/50 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{attrError}</div>
             )}
 
-            <form onSubmit={handleCreateAttribute} className="space-y-4">
+            <form onSubmit={handleSubmitAttribute} className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Name *</label>
                 <input
@@ -467,22 +566,56 @@ export default function CategoriesPage() {
                   onChange={(e) => setAttrData({ ...attrData, type: e.target.value })}
                   className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
                 >
-                  <option value="select">Select</option>
-                  <option value="text">Text</option>
-                  <option value="number">Number</option>
+                  <option value="SELECT">Select</option>
+                  <option value="TEXT">Text</option>
+                  <option value="NUMBER">Number</option>
+                  <option value="BOOLEAN">Boolean</option>
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Options <span className="font-normal text-slate-400 dark:text-slate-500">(comma separated)</span>
-                </label>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Unit <span className="font-normal text-slate-400 dark:text-slate-500">(optional)</span></label>
                 <input
                   type="text"
-                  value={attrData.options}
-                  onChange={(e) => setAttrData({ ...attrData, options: e.target.value })}
-                  placeholder="S, M, L, XL"
+                  value={attrData.unit}
+                  onChange={(e) => setAttrData({ ...attrData, unit: e.target.value })}
+                  placeholder="e.g., kg, cm, USD"
                   className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Options <span className="font-normal text-slate-400 dark:text-slate-500">(optional)</span>
+                </label>
+                <div
+                  className="min-h-11.5 w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 px-3 py-2 flex flex-wrap gap-1.5 items-center transition focus-within:border-sky-400 dark:focus-within:border-sky-500 focus-within:bg-white dark:focus-within:bg-slate-700 focus-within:ring-4 focus-within:ring-sky-100 dark:focus-within:ring-sky-900/50 cursor-text"
+                  onClick={() => optionInputRef.current?.focus()}
+                >
+                  {attrData.options.map((opt, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 rounded-lg bg-slate-200 dark:bg-slate-600 pl-2.5 pr-1 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+                      {opt}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setAttrData(prev => ({ ...prev, options: prev.options.filter((_, j) => j !== i) })); }}
+                        className="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={optionInputRef}
+                    type="text"
+                    value={optionInput}
+                    onChange={(e) => setOptionInput(e.target.value)}
+                    onKeyDown={handleOptionKeyDown}
+                    onPaste={handleOptionPaste}
+                    placeholder={attrData.options.length === 0 ? 'Type an option and press Enter…' : 'Add another…'}
+                    className="flex-1 min-w-30 bg-transparent text-sm text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 py-0.5"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">Press <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono text-[10px]">Enter</kbd> to add · <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono text-[10px]">Backspace</kbd> to remove last</p>
               </div>
               <div>
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -515,11 +648,11 @@ export default function CategoriesPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                  ) : 'Create'}
+                  ) : editingAttr ? 'Save' : 'Create'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAttrModal(false)}
+                  onClick={() => { setShowAttrModal(false); setEditingAttr(null); }}
                   className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-5 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700"
                 >
                   Cancel

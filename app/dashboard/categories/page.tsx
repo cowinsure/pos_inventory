@@ -27,6 +27,7 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [showAttrModal, setShowAttrModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '', description: '', parentId: '' });
   const [attrData, setAttrData] = useState<AttrFormData>({ name: '', type: 'select', options: '', required: true });
   const [formError, setFormError] = useState('');
@@ -96,19 +97,50 @@ export default function CategoriesPage() {
     c.name.toLowerCase().includes(parentQuery.toLowerCase())
   );
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingCategory(null);
+    setFormData({ name: '', description: '', parentId: '' });
+    setFormError('');
+    setParentQuery('');
+    setParentOpen(false);
+    setShowModal(true);
+  };
+
+  const openEditModal = (cat: Category) => {
+    setEditingCategory(cat);
+    setFormData({
+      name: cat.name,
+      description: cat.description ?? '',
+      parentId: cat.parent ? cat.parent.toString() : '',
+    });
+    setFormError('');
+    setParentQuery('');
+    setParentOpen(false);
+    setShowModal(true);
+  };
+
+  const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setSubmitting(true);
     try {
-      const data: Record<string, unknown> = { name: formData.name, description: formData.description };
+      const data: { name: string; description?: string; parentId?: number } = {
+        name: formData.name,
+        description: formData.description || undefined,
+      };
       if (formData.parentId) data.parentId = Number(formData.parentId);
-      await realApi.createCategory(data as { name: string; description?: string; parentId?: number });
+
+      if (editingCategory) {
+        await realApi.updateCategory(editingCategory.id, data);
+      } else {
+        await realApi.createCategory(data);
+      }
       setShowModal(false);
       setFormData({ name: '', description: '', parentId: '' });
+      setEditingCategory(null);
       loadCategories();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create category');
+      setFormError(err instanceof Error ? err.message : editingCategory ? 'Failed to update category' : 'Failed to create category');
     } finally {
       setSubmitting(false);
     }
@@ -151,13 +183,7 @@ export default function CategoriesPage() {
             Categories
           </div>
           <button
-            onClick={() => {
-              setShowModal(true);
-              setFormError('');
-              setFormData({ name: '', description: '', parentId: '' });
-              setParentQuery('');
-              setParentOpen(false);
-            }}
+            onClick={openCreateModal}
             className="flex items-center gap-2 rounded-2xl bg-slate-950 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-white"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,20 +221,31 @@ export default function CategoriesPage() {
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setAttrError('');
-                      setAttrData({ name: '', type: 'select', options: '', required: true });
-                      setShowAttrModal(true);
-                    }}
-                    className="shrink-0 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Attribute
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => openEditModal(cat)}
+                      className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setAttrError('');
+                        setAttrData({ name: '', type: 'select', options: '', required: true });
+                        setShowAttrModal(true);
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Attribute
+                    </button>
+                  </div>
                 </div>
 
                 {cat.attributes?.length > 0 ? (
@@ -240,21 +277,21 @@ export default function CategoriesPage() {
 
       {/* Category modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => { setShowModal(false); setEditingCategory(null); }}>
           <div className="w-full max-w-md rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur" onClick={e => e.stopPropagation()}>
             <div className="mb-1.5 h-1 w-10 rounded-full bg-linear-to-r from-sky-500 to-orange-400" />
             <div className="mb-6">
               <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 mb-1">
-                New Category
+                {editingCategory ? 'Edit Category' : 'New Category'}
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Fill in the details to create a category</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{editingCategory ? 'Update the category details below' : 'Fill in the details to create a category'}</p>
             </div>
 
             {formError && (
               <div className="mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-700/50 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{formError}</div>
             )}
 
-            <form onSubmit={handleCreateCategory} className="space-y-4">
+            <form onSubmit={handleSubmitCategory} className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Name *</label>
                 <input
@@ -377,11 +414,11 @@ export default function CategoriesPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                  ) : 'Create'}
+                  ) : editingCategory ? 'Save' : 'Create'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => { setShowModal(false); setEditingCategory(null); }}
                   className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-5 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700"
                 >
                   Cancel

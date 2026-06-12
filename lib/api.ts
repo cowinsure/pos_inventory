@@ -203,6 +203,13 @@ export const realApi = {
   getBarcodeImages: (barcodes: string[]) =>
     api.get<BarcodeImagesResponse>('/inventory/barcode-images', { barcodes: barcodes.join(',') }),
 
+  getLots: (params?: { page?: number; limit?: number }) => {
+    const q: Record<string, string> = {};
+    if (params?.page != null) q.page = String(params.page);
+    if (params?.limit != null) q.limit = String(params.limit);
+    return api.get<LotsResponse>('/inventory/lots', Object.keys(q).length ? q : undefined);
+  },
+
   // Accounting methods
   createSupplierPayment: (data: { supplierId: number; amount: number; description?: string }) =>
     api.post<SupplierPayment>('/accounting/supplier-payments', data),
@@ -501,4 +508,38 @@ export interface Expense {
 export interface ExpenseSummary {
   totalAmount: number;
   count: number;
+}
+
+export interface LotBarcodeItem {
+  id: number;
+  status: string;
+  barcode: string;
+}
+
+export interface Lot {
+  id: number;
+  lotNumber: string;
+  productId: number;
+  productName: string;
+  sku: string;
+  supplierId: number;
+  supplierName: string;
+  quantityReceived: number;
+  totalCost: number;
+  unitCost: number;
+  notes: string | null;
+  journalEntryId: number;
+  receivedAt: string;
+  updatedAt: string;
+  itemCount: number;
+  items: LotBarcodeItem[];
+}
+
+export interface LotsResponse {
+  page: number;
+  limit: number;
+  total: number;
+  pageCount: number;
+  hasNext: boolean;
+  items: Lot[];
 }

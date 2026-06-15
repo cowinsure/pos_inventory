@@ -37,6 +37,12 @@ export default function CategoriesPage() {
   const [formError, setFormError] = useState('');
   const [attrError, setAttrError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deletingAttr, setDeletingAttr] = useState<{ attr: { id: number; name: string }; categoryId: number } | null>(null);
+  const [deleteAttrError, setDeleteAttrError] = useState('');
+  const [deleteAttrSubmitting, setDeleteAttrSubmitting] = useState(false);
 
   // Parent category dropdown
   const [parentOpen, setParentOpen] = useState(false);
@@ -147,6 +153,36 @@ export default function CategoriesPage() {
       setFormError(err instanceof Error ? err.message : editingCategory ? 'Failed to update category' : 'Failed to create category');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    setDeleteError('');
+    setDeleteSubmitting(true);
+    try {
+      await realApi.deleteCategory(deletingCategory.id);
+      setDeletingCategory(null);
+      loadCategories();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete category');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  const handleDeleteAttribute = async () => {
+    if (!deletingAttr) return;
+    setDeleteAttrError('');
+    setDeleteAttrSubmitting(true);
+    try {
+      await realApi.deleteAttribute(deletingAttr.categoryId, deletingAttr.attr.id);
+      setDeletingAttr(null);
+      loadCategories();
+    } catch (err) {
+      setDeleteAttrError(err instanceof Error ? err.message : 'Failed to delete attribute');
+    } finally {
+      setDeleteAttrSubmitting(false);
     }
   };
 
@@ -307,6 +343,15 @@ export default function CategoriesPage() {
                       </svg>
                       Attribute
                     </button>
+                    <button
+                      onClick={() => { setDeleteError(''); setDeletingCategory(cat); }}
+                      className="flex items-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-700/50 bg-rose-50/70 dark:bg-rose-900/20 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 transition hover:bg-rose-100 dark:hover:bg-rose-900/40 hover:border-rose-300 dark:hover:border-rose-600"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
                   </div>
                 </div>
 
@@ -349,6 +394,14 @@ export default function CategoriesPage() {
                                 >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setDeleteAttrError(''); setDeletingAttr({ attr, categoryId: cat.id }); }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center h-5 w-5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                 </button>
                               </div>
@@ -524,6 +577,102 @@ export default function CategoriesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deletingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setDeletingCategory(null)}>
+          <div className="w-full max-w-sm rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur" onClick={e => e.stopPropagation()}>
+            <div className="mb-1.5 h-1 w-10 rounded-full bg-rose-400" />
+            <div className="mb-6">
+              <div className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-900/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400 mb-2">
+                Delete Category
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-100">{deletingCategory.name}</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            {deleteError && (
+              <div className="mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-700/50 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{deleteError}</div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteCategory}
+                disabled={deleteSubmitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-rose-600 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:bg-rose-300 dark:disabled:bg-rose-900/50"
+              >
+                {deleteSubmitting ? (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeletingCategory(null)}
+                className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-5 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete attribute confirmation modal */}
+      {deletingAttr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setDeletingAttr(null)}>
+          <div className="w-full max-w-sm rounded-[28px] border border-white/80 dark:border-slate-700/70 bg-white/95 dark:bg-slate-800/95 p-7 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.40)] backdrop-blur" onClick={e => e.stopPropagation()}>
+            <div className="mb-1.5 h-1 w-10 rounded-full bg-rose-400" />
+            <div className="mb-6">
+              <div className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-900/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400 mb-2">
+                Delete Attribute
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-100">{deletingAttr.attr.name}</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            {deleteAttrError && (
+              <div className="mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-700/50 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{deleteAttrError}</div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteAttribute}
+                disabled={deleteAttrSubmitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-rose-600 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:bg-rose-300 dark:disabled:bg-rose-900/50"
+              >
+                {deleteAttrSubmitting ? (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeletingAttr(null)}
+                className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-700/50 px-5 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

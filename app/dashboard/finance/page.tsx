@@ -327,21 +327,21 @@ export default function FinancePage() {
               <div className="bg-white dark:bg-slate-800/60 px-6 py-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Total Paid</p>
                 <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
-                  ${totalAllDebit.toFixed(2)}
+                  ৳{totalAllDebit.toFixed(2)}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">across {filteredAllLedgers.length} supplier{filteredAllLedgers.length !== 1 ? 's' : ''}</p>
               </div>
               <div className="bg-white dark:bg-slate-800/60 px-6 py-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Total Credit</p>
                 <p className="mt-1 text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
-                  ${totalAllCredit.toFixed(2)}
+                  ৳{totalAllCredit.toFixed(2)}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">invoiced by suppliers</p>
               </div>
               <div className={`px-6 py-4 ${totalAllBalance > 0 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-white dark:bg-slate-800/60'}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Net Balance Due</p>
                 <p className={`mt-1 text-2xl font-bold tabular-nums ${totalAllBalance > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                  ${totalAllBalance.toFixed(2)}
+                  ৳{totalAllBalance.toFixed(2)}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
                   {totalAllBalance > 0 ? `${filteredAllLedgers.filter(r => (r.balance ?? 0) > 0).length} supplier(s) with outstanding balance` : 'all balances cleared'}
@@ -393,13 +393,13 @@ export default function FinancePage() {
                             </div>
                           </td>
                           <td className="px-5 py-3.5 text-right tabular-nums whitespace-nowrap text-slate-500 dark:text-slate-400">
-                            {(row.totalDebit ?? 0) > 0 ? `$${(row.totalDebit ?? 0).toFixed(2)}` : <span className="text-slate-300 dark:text-slate-600">—</span>}
+                            {(row.totalDebit ?? 0) > 0 ? `৳${(row.totalDebit ?? 0).toFixed(2)}` : <span className="text-slate-300 dark:text-slate-600">—</span>}
                           </td>
                           <td className="px-5 py-3.5 text-right tabular-nums whitespace-nowrap font-semibold text-emerald-700 dark:text-emerald-400">
-                            {(row.totalCredit ?? 0) > 0 ? `$${(row.totalCredit ?? 0).toFixed(2)}` : <span className="font-normal text-slate-300 dark:text-slate-600">—</span>}
+                            {(row.totalCredit ?? 0) > 0 ? `৳${(row.totalCredit ?? 0).toFixed(2)}` : <span className="font-normal text-slate-300 dark:text-slate-600">—</span>}
                           </td>
                           <td className={`px-5 py-3.5 text-right tabular-nums whitespace-nowrap font-semibold ${rowHasDue ? 'text-amber-700 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                            ${(row.balance ?? 0).toFixed(2)}
+                            ৳{(row.balance ?? 0).toFixed(2)}
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <button
@@ -495,7 +495,7 @@ export default function FinancePage() {
                   {hasDue ? 'Outstanding' : 'Balance'}
                 </span>
                 <span className={`text-base font-bold ${hasDue ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                  ${(currentBalance ?? 0).toFixed(2)}
+                  ৳{(currentBalance ?? 0).toFixed(2)}
                 </span>
               </div>
             )}
@@ -555,7 +555,7 @@ export default function FinancePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Outstanding balance due to {selectedSupplier?.name}</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">This supplier is owed <span className="font-bold">${(currentBalance ?? 0).toFixed(2)}</span>. Record a payment to clear this balance.</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">This supplier is owed <span className="font-bold">৳{(currentBalance ?? 0).toFixed(2)}</span>. Record a payment to clear this balance.</p>
                     </div>
                     <button
                       type="button"
@@ -602,10 +602,10 @@ export default function FinancePage() {
                                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs font-mono">{entry.reference}</td>
                                   <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.description}</td>
                                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-semibold text-amber-700 dark:text-amber-400">
-                                    ${(entry.credit ?? 0).toFixed(2)}
+                                    ৳{(entry.credit ?? 0).toFixed(2)}
                                   </td>
                                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap text-slate-600 dark:text-slate-400">
-                                    ${(entry.balance ?? 0).toFixed(2)}
+                                    ৳{(entry.balance ?? 0).toFixed(2)}
                                   </td>
                                 </tr>
                               ))}
@@ -643,10 +643,10 @@ export default function FinancePage() {
                                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs font-mono">{entry.reference}</td>
                                   <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.description}</td>
                                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-semibold text-emerald-700 dark:text-emerald-400">
-                                    ${(entry.debit ?? 0).toFixed(2)}
+                                    ৳{(entry.debit ?? 0).toFixed(2)}
                                   </td>
                                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap text-slate-600 dark:text-slate-400">
-                                    ${(entry.balance ?? 0).toFixed(2)}
+                                    ৳{(entry.balance ?? 0).toFixed(2)}
                                   </td>
                                 </tr>
                               ))}
@@ -713,7 +713,7 @@ export default function FinancePage() {
                   <div className="rounded-xl border border-rose-100 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-900/10 px-5 py-4">
                     <p className="text-xs font-semibold uppercase tracking-widest text-rose-400 dark:text-rose-500">Total Expenses</p>
                     <p className="mt-1 text-2xl font-bold tabular-nums text-rose-700 dark:text-rose-400">
-                      ${Number(expenseSummary.totalAmount ?? 0).toFixed(2)}
+                      ৳{Number(expenseSummary.totalAmount ?? 0).toFixed(2)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800/60 px-5 py-4">
@@ -803,7 +803,7 @@ export default function FinancePage() {
                             {expense.description ?? <span className="italic text-slate-300 dark:text-slate-600">No description</span>}
                           </td>
                           <td className="px-5 py-3.5 text-right tabular-nums whitespace-nowrap font-semibold text-rose-700 dark:text-rose-400">
-                            ${Number(expense.amount).toFixed(2)}
+                            ৳{Number(expense.amount).toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -907,7 +907,7 @@ export default function FinancePage() {
                 Amount <span className="text-rose-500">*</span>
               </label>
               <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 overflow-hidden focus-within:border-emerald-500 transition">
-                <span className="px-3 text-sm font-semibold text-slate-400 dark:text-slate-500 select-none">$</span>
+                <span className="px-3 text-sm font-semibold text-slate-400 dark:text-slate-500 select-none">Tk</span>
                 <input
                   type="number"
                   min="0"
@@ -985,7 +985,7 @@ export default function FinancePage() {
                 Amount <span className="text-rose-500">*</span>
               </label>
               <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 overflow-hidden focus-within:border-emerald-500 transition">
-                <span className="px-3 text-sm font-semibold text-slate-400 dark:text-slate-500 select-none">$</span>
+                <span className="px-3 text-sm font-semibold text-slate-400 dark:text-slate-500 select-none">Tk</span>
                 <input
                   type="number"
                   min="0"

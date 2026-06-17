@@ -270,7 +270,7 @@ export default function ProductsPage() {
                       <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{product.name}</p>
                       <p className="text-xs text-slate-400">{cat?.name || '—'}</p>
                     </div>
-                    <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">${product.basePrice.toFixed(2)}</p>
+                    <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">৳{product.basePrice.toFixed(2)}</p>
                     <div className="hidden md:flex shrink-0 flex-wrap gap-1 max-w-44">
                       {firstVariant && Object.entries(firstVariant).slice(0, 3).map(([k, v]) => (
                         <span key={k} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
@@ -331,7 +331,7 @@ export default function ProductsPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Price *</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500">Tk</span>
                   <input
                     type="number"
                     step="0.01"
@@ -339,7 +339,7 @@ export default function ProductsPage() {
                     onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
                     placeholder="19.99"
                     required
-                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>

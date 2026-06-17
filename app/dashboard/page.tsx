@@ -156,7 +156,7 @@ export default function DashboardHome() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{prod.name}</p>
-                    <p className="text-xs text-slate-400">${prod.basePrice.toFixed(2)}</p>
+                    <p className="text-xs text-slate-400">৳{prod.basePrice.toFixed(2)}</p>
                   </div>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${prod.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                     {prod.active ? 'Active' : 'Inactive'}

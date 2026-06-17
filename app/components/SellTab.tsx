@@ -357,7 +357,7 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
                     <tr key={scanned.item.id} className={`transition-colors hover:bg-sky-50/40 dark:hover:bg-sky-900/10 ${idx !== scannedItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-700/50' : ''}`}>
                       <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">{scanned.item.barcode}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{scanned.item.product?.name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">${Number(scanned.item.product?.basePrice || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">৳{Number(scanned.item.product?.basePrice || 0).toFixed(2)}</td>
                       <td className="px-4 py-3">
                         <input
                           type="number"
@@ -399,15 +399,15 @@ export default function SellTab({ onSuccess, showMessage }: SellTabProps) {
             <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 p-5 space-y-2">
               <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
                 <span>Subtotal ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">${cartTotals.totalPrice.toFixed(2)}</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">৳{cartTotals.totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Discount</span>
-                <span className="font-medium text-rose-600 dark:text-rose-400">−${cartTotals.totalDiscount.toFixed(2)}</span>
+                <span className="font-medium text-rose-600 dark:text-rose-400">−৳{cartTotals.totalDiscount.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-3 mt-1">
                 <span className="text-base font-semibold text-slate-900 dark:text-slate-100">Total</span>
-                <span className="text-lg font-semibold text-slate-950 dark:text-white">${cartTotals.subtotal.toFixed(2)}</span>
+                <span className="text-lg font-semibold text-slate-950 dark:text-white">৳{cartTotals.subtotal.toFixed(2)}</span>
               </div>
             </div>
 

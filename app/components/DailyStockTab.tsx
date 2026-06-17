@@ -89,7 +89,7 @@ export default function DailyStockTab({ products, showMessage }: DailyStockTabPr
                       </span>
                       <span className="flex flex-col items-start">
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{selected.name}</span>
-                        {selected.basePrice && <span className="text-xs text-slate-400">${selected.basePrice} each</span>}
+                        {selected.basePrice && <span className="text-xs text-slate-400">৳{selected.basePrice} each</span>}
                       </span>
                     </span>
                   ) : (
@@ -133,7 +133,7 @@ export default function DailyStockTab({ products, showMessage }: DailyStockTabPr
                           </span>
                           <div>
                             <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{p.name}</div>
-                            {p.basePrice && <div className="text-xs text-slate-400">${p.basePrice} each</div>}
+                            {p.basePrice && <div className="text-xs text-slate-400">৳{p.basePrice} each</div>}
                           </div>
                           {p.id === Number(productId) && (
                             <svg className="w-4 h-4 text-sky-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

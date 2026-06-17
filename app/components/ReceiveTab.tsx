@@ -215,7 +215,7 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
                 placeholder="Select a product..."
                 searchPlaceholder="Search products..."
                 avatarColor="bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300"
-                renderMeta={(p: Product) => p.basePrice ? `$${p.basePrice} each` : undefined}
+                renderMeta={(p: Product) => p.basePrice ? `৳${p.basePrice} each` : undefined}
               />
             </div>
 
@@ -244,7 +244,7 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
                 Unit Cost *
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500 pointer-events-none">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500 pointer-events-none">Tk</span>
                 <input
                   type="number"
                   min="0"
@@ -253,7 +253,7 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
                   onChange={e => setForm({ ...form, unitCost: e.target.value })}
                   placeholder="0.00"
                   required
-                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-700/50 pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 dark:focus:border-sky-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-900/50"
                 />
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function ReceiveTab({ products, onSuccess, showMessage }: Receive
                   {' '}of{' '}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedProduct.name}</span>
                   {form.unitCost && (
-                    <> at <span className="font-semibold text-slate-900 dark:text-slate-100">${Number(form.unitCost).toFixed(2)}</span> each</>
+                    <> at <span className="font-semibold text-slate-900 dark:text-slate-100">৳{Number(form.unitCost).toFixed(2)}</span> each</>
                   )}
                   {' '}from{' '}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedSupplier.name}</span>.

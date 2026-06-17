@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 
 const PAGE_LIMIT = 20;
 
-const fmt = (s: string | number) => `$${parseFloat(String(s)).toFixed(2)}`;
+const fmt = (s: string | number) => `৳${parseFloat(String(s)).toFixed(2)}`;
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {

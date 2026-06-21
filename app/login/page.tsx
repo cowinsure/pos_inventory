@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { realApi, type AuthResponse } from '@/lib/api';
 
@@ -21,6 +21,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { login: setAuth, token, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered') === '1';
+  const passwordReset = searchParams.get('reset') === '1';
 
   useEffect(() => {
     if (!authLoading && token) {
@@ -128,6 +131,18 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {registered && (
+              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-700">
+                Account created — log in to get started.
+              </div>
+            )}
+
+            {passwordReset && (
+              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-700">
+                Password reset successful — log in with your new password.
+              </div>
+            )}
+
             {error && (
               <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-700">
                 {error}
@@ -180,7 +195,12 @@ export default function LoginPage() {
                   />
                   Keep me signed in
                 </label>
-                <span className="font-medium text-slate-400">Secure access</span>
+                <Link
+                    href="/forgot-password"
+                    className="font-medium text-sky-700 dark:text-sky-400 transition hover:text-sky-800 dark:hover:text-sky-300"
+                  >
+                    Forgot password?
+                  </Link>
               </div>
 
               <button

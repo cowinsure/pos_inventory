@@ -81,9 +81,26 @@ export const realApi = {
   // Auth methods
   signup: (data: { email: string; password: string; role: string }) =>
     api.post<AuthResponse>('/auth/signup', data),
-  
+
   login: (data: { email: string; password: string }) =>
     api.post<AuthResponse>('/auth/login', data),
+
+  requestSignupOtp: (data: {
+    organization: { name: string; description: string; email: string; phone: string; address: string; taxId: string };
+    admin: { email: string; mobile: string };
+  }) => api.post<{ message: string }>('/tenants/signup/request-otp', data),
+
+  verifySignupOtp: (data: { email: string; otp: string }) =>
+    api.post<{ message: string }>('/tenants/signup/verify-otp', data),
+
+  setupPassword: (data: { email: string; otp: string; password: string }) =>
+    api.post<AuthResponse & { access_token?: string; data?: { token?: string } }>('/auth/setup-password/confirm', data),
+
+  requestPasswordResetOtp: (data: { email: string }) =>
+    api.post<{ message: string }>('/auth/password-reset/request-otp', data),
+
+  confirmPasswordReset: (data: { email: string; otp: string; newPassword: string }) =>
+    api.post<{ message: string }>('/auth/password-reset/confirm', data),
 
   // Category methods
   getCategories: () =>

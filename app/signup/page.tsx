@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { realApi } from '@/lib/api';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 
-const STEP_LABELS = ['Organization', 'Verify OTP', 'Set Password'];
+const STEP_LABELS = ['Organization', 'Verify OTP'];
 
 function StepIndicator({ step }: { step: Step }) {
   return (
@@ -77,16 +77,15 @@ export default function SignupPage() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminMobile, setAdminMobile] = useState('');
 
-  // Step 2
-  const [otp, setOtp] = useState('');
-
-  // Step 3
-  const [setupOtp, setSetupOtp] = useState('');
+  // Step 1 — password
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signup: setAuth, token, loading: authLoading } = useAuth();
+  // Step 2
+  const [otp, setOtp] = useState('');
+
+  const { token, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -97,6 +96,10 @@ export default function SignupPage() {
 
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -109,7 +112,7 @@ export default function SignupPage() {
           address: orgAddress,
           taxId,
         },
-        admin: { email: adminEmail, mobile: adminMobile },
+        admin: { email: adminEmail, mobile: adminMobile, password },
       });
       setStep(2);
     } catch (err) {
@@ -125,32 +128,9 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await realApi.verifySignupOtp({ email: adminEmail, otp });
-      setStep(3);
+      router.push('/login?registered=1');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStep3 = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const res = await realApi.setupPassword({ email: adminEmail, otp: setupOtp, password });
-      const tok = res?.token || res?.access_token || res?.data?.token;
-      if (tok) {
-        setAuth(tok);
-      } else {
-        router.push('/login?registered=1');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Password setup failed');
     } finally {
       setLoading(false);
     }
@@ -364,6 +344,47 @@ export default function SignupPage() {
                     </div>
                   </div>
 
+                  <div className="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Password
+                    </p>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Password <span className="text-rose-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="text-xs font-semibold text-sky-700 dark:text-sky-400 transition hover:text-sky-800 dark:hover:text-sky-300"
+                        >
+                          {showPassword ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Create a secure password"
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Confirm password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repeat your password"
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={loading}
@@ -434,83 +455,6 @@ export default function SignupPage() {
               </>
             )}
 
-            {/* Step 3 — Set password */}
-            {step === 3 && (
-              <>
-                <div className="mb-6 space-y-1">
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                    Set your password
-                  </h2>
-                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-                    A password setup code was sent to{' '}
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{adminEmail}</span>.
-                  </p>
-                </div>
-
-                <form onSubmit={handleStep3} className="space-y-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Setup code
-                    </label>
-                    <input
-                      type="text"
-                      value={setupOtp}
-                      onChange={(e) => setSetupOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="000000"
-                      className={`${inputCls} text-center text-2xl tracking-[0.5em] font-semibold`}
-                      required
-                      maxLength={6}
-                      inputMode="numeric"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="text-xs font-semibold text-sky-700 dark:text-sky-400 transition hover:text-sky-800 dark:hover:text-sky-300"
-                      >
-                        {showPassword ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a secure password"
-                      className={inputCls}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Confirm password
-                    </label>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repeat your password"
-                      className={inputCls}
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex w-full items-center justify-center rounded-2xl bg-slate-950 dark:bg-white px-4 py-3 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
-                  >
-                    {loading ? 'Setting up...' : 'Activate account'}
-                  </button>
-                </form>
-              </>
-            )}
           </div>
         </section>
       </div>

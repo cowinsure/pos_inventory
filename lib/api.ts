@@ -87,7 +87,7 @@ export const realApi = {
 
   requestSignupOtp: (data: {
     organization: { name: string; description: string; email: string; phone: string; address: string; taxId: string };
-    admin: { email: string; mobile: string };
+    admin: { email: string; mobile: string; password: string };
   }) => api.post<{ message: string }>('/tenants/signup/request-otp', data),
 
   verifySignupOtp: (data: { email: string; otp: string }) =>

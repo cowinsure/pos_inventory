@@ -7,12 +7,13 @@ import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
 const navItems = [
-  { href: '/dashboard', label: 'Home', icon: 'home' },
+  { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+   { href: '/dashboard/inventory/sell', label: 'POS', icon: 'sell' },
   { href: '/dashboard/categories', label: 'Categories', icon: 'folder' },
   { href: '/dashboard/products', label: 'Products', icon: 'box' },
   { href: '/dashboard/inventory/list', label: 'Inventory List', icon: 'inventory' },
   { href: '/dashboard/inventory/receive', label: 'Receive', icon: 'receive' },
-  { href: '/dashboard/inventory/sell', label: 'Sell', icon: 'sell' },
+ 
   { href: '/dashboard/sales/history', label: 'Sales History', icon: 'history' },
   { href: '/dashboard/inventory/adjust', label: 'Adjust', icon: 'adjust' },
   { href: '/dashboard/inventory/daily-stock', label: 'Daily Stock', icon: 'stock' },
@@ -25,6 +26,11 @@ const icons: Record<string, ReactNode> = {
   home: (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2 7-7 7 7 2 2M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
+    </svg>
+  ),
+   sell: (
+    <svg className="h-48 w-48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   ),
   folder: (
@@ -47,11 +53,7 @@ const icons: Record<string, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v10m0 0l-4-4m4 4l4-4M5 19h14" />
     </svg>
   ),
-  sell: (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
+ 
   adjust: (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M5.5 9A8 8 0 0119 12m-.5 3A8 8 0 015 12" />

@@ -49,7 +49,7 @@ describe('API client', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(String(url)).toContain('/inventory/items?page=2&active=true');
+    expect(String(url)).toBe('/backend-api/inventory/items?page=2&active=true');
     expect(String(url)).not.toContain('omitted');
     expect((options?.headers as Headers).get('Authorization')).toBe('Bearer test-token');
   });

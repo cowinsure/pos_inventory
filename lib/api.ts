@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://217.217.249.227:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/backend-api';
 
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized';
 

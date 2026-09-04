@@ -202,7 +202,7 @@ export default function CategoriesPage() {
       name: attr.name,
       type: attr.type,
       unit: attr.unit ?? '',
-      options: attr.options,
+      options: Array.isArray(attr.options) ? attr.options : [],
       required: attr.required,
     });
     setOptionInput('');
@@ -366,6 +366,7 @@ export default function CategoriesPage() {
                     <div className="space-y-1">
                       {cat.attributes.map((attr, i) => {
                         const isLast = i === cat.attributes.length - 1;
+                        const options = Array.isArray(attr.options) ? attr.options : [];
                         const typeColor: Record<string, string> = {
                           SELECT: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300',
                           TEXT: 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300',
@@ -385,8 +386,8 @@ export default function CategoriesPage() {
                                 {attr.unit && <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">{attr.unit}</span>}
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                {attr.options.length > 0 && (
-                                  <span className="hidden sm:block text-[10px] text-slate-400 dark:text-slate-500 max-w-22.5 truncate">{attr.options.join(' · ')}</span>
+                                {options.length > 0 && (
+                                  <span className="hidden sm:block text-[10px] text-slate-400 dark:text-slate-500 max-w-22.5 truncate">{options.join(' · ')}</span>
                                 )}
                                 <button
                                   onClick={() => openEditAttrModal(cat, attr)}

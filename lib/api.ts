@@ -130,6 +130,17 @@ export const api = {
     request<T>(endpoint, { method: 'DELETE' }),
 };
 
+type AttributeResponse = Omit<Attribute, 'options'> & { options?: unknown };
+
+function normalizeAttribute(attribute: AttributeResponse): Attribute {
+  return {
+    ...attribute,
+    options: Array.isArray(attribute.options)
+      ? attribute.options.filter((option): option is string => typeof option === 'string')
+      : [],
+  };
+}
+
 // Real API client methods matching mock API interface
 export const realApi = {
   // Auth methods
@@ -179,17 +190,21 @@ export const realApi = {
     api.get<Category[]>(`/products/categories/${id}/path`),
 
   // Attribute methods
-  getAttributes: (categoryId: number) =>
-    api.get<Attribute[]>(`/products/categories/${categoryId}/attributes`),
+  getAttributes: async (categoryId: number) => {
+    const attributes = await api.get<AttributeResponse[] | null>(
+      `/products/categories/${categoryId}/attributes`,
+    );
+    return Array.isArray(attributes) ? attributes.map(normalizeAttribute) : [];
+  },
   
-  getAttribute: (categoryId: number, id: number) =>
-    api.get<Attribute>(`/products/categories/${categoryId}/attributes/${id}`),
+  getAttribute: async (categoryId: number, id: number) =>
+    normalizeAttribute(await api.get<AttributeResponse>(`/products/categories/${categoryId}/attributes/${id}`)),
   
-  createAttribute: (categoryId: number, data: { name: string; type: string; options?: string[]; required: boolean; unit?: string }) =>
-    api.post<Attribute>(`/products/categories/${categoryId}/attributes`, data),
+  createAttribute: async (categoryId: number, data: { name: string; type: string; options?: string[]; required: boolean; unit?: string }) =>
+    normalizeAttribute(await api.post<AttributeResponse>(`/products/categories/${categoryId}/attributes`, data)),
   
-  updateAttribute: (categoryId: number, id: number, data: Partial<{ name: string; type: string; options: string[]; required: boolean; unit: string }>) =>
-    api.put<Attribute>(`/products/categories/${categoryId}/attributes/${id}`, data),
+  updateAttribute: async (categoryId: number, id: number, data: Partial<{ name: string; type: string; options: string[]; required: boolean; unit: string }>) =>
+    normalizeAttribute(await api.put<AttributeResponse>(`/products/categories/${categoryId}/attributes/${id}`, data)),
   
   deleteAttribute: (categoryId: number, id: number) =>
     api.delete(`/products/categories/${categoryId}/attributes/${id}`),

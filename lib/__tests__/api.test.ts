@@ -1,4 +1,4 @@
-import { AUTH_UNAUTHORIZED_EVENT, ApiError, api } from '../api';
+import { AUTH_UNAUTHORIZED_EVENT, ApiError, api, realApi } from '../api';
 
 const fetchMock = jest.fn();
 
@@ -68,6 +68,28 @@ describe('API client', () => {
     );
 
     await expect(api.delete<void>('/products/1')).resolves.toBeUndefined();
+  });
+
+  it('normalizes nullable attribute options from the backend', async () => {
+    fetchMock.mockResolvedValue(
+      mockResponse({
+        body: JSON.stringify([
+          {
+            id: 1,
+            name: 'Warranty',
+            type: 'NUMBER',
+            unit: 'months',
+            options: null,
+            required: false,
+            categoryId: 2,
+          },
+        ]),
+      }),
+    );
+
+    await expect(realApi.getAttributes(2)).resolves.toEqual([
+      expect.objectContaining({ id: 1, options: [] }),
+    ]);
   });
 
   it('normalizes backend validation arrays and exposes error details', async () => {
